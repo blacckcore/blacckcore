@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { getRemindersEnabled, setRemindersEnabled } from '@/hooks/useNotifications';
+import { getRemindersEnabled, setRemindersEnabled, getNotificationEngagement } from '@/hooks/useNotifications';
 
 export default function SettingsPage() {
   const { categories, addCategory, deleteCategory } = useCategories();
@@ -92,7 +92,7 @@ export default function SettingsPage() {
             <Bell className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm text-foreground">Lembrete diário de hábitos</p>
-              <p className="text-xs text-muted-foreground">Notificação às 20:00 se houver hábitos incompletos</p>
+              <p className="text-xs text-muted-foreground">Notificações às 20:00 e 22:00 se houver hábitos incompletos</p>
             </div>
           </div>
           <Switch
@@ -107,6 +107,26 @@ export default function SettingsPage() {
             }}
           />
         </div>
+        {reminders && (() => {
+          const engagement = getNotificationEngagement();
+          const rate = engagement.sent > 0 ? Math.round((engagement.clicked / engagement.sent) * 100) : 0;
+          return (
+            <div className="flex items-center gap-4 pt-2 border-t border-border">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">{engagement.sent}</p>
+                <p className="text-xs text-muted-foreground">Enviadas</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">{engagement.clicked}</p>
+                <p className="text-xs text-muted-foreground">Clicadas</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">{rate}%</p>
+                <p className="text-xs text-muted-foreground">Engajamento</p>
+              </div>
+            </div>
+          );
+        })()}
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 space-y-4">
