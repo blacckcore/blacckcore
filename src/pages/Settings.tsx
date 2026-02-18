@@ -1,19 +1,22 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trash2, Plus, Download, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Download, AlertTriangle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { getRemindersEnabled, setRemindersEnabled } from '@/hooks/useNotifications';
 
 export default function SettingsPage() {
   const { categories, addCategory, deleteCategory } = useCategories();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [newCat, setNewCat] = useState('');
+  const [reminders, setReminders] = useState(getRemindersEnabled);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const handleExport = async () => {
@@ -79,6 +82,30 @@ export default function SettingsPage() {
               </button>
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6 space-y-4">
+        <h2 className="text-lg font-semibold font-display">Notificações</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Bell className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-foreground">Lembrete diário de hábitos</p>
+              <p className="text-xs text-muted-foreground">Notificação às 20:00 se houver hábitos incompletos</p>
+            </div>
+          </div>
+          <Switch
+            checked={reminders}
+            onCheckedChange={(checked) => {
+              setReminders(checked);
+              setRemindersEnabled(checked);
+              if (checked && 'Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+              }
+              toast({ title: checked ? 'Lembretes ativados' : 'Lembretes desativados' });
+            }}
+          />
         </div>
       </motion.div>
 
