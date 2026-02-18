@@ -6,15 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useHabits } from '@/hooks/useHabits';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/UpgradeModal';
 
 export default function Habits() {
   const { habits, completions, addHabit, deleteHabit, toggleCompletion, getStreak } = useHabits();
   const { toast } = useToast();
+  const { features } = useSubscription();
   const [newHabit, setNewHabit] = useState('');
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
   const handleAdd = async () => {
     if (!newHabit.trim()) return;
+    if (habits.length >= features.maxHabits) {
+      setShowUpgrade(true);
+      return;
+    }
     try {
       await addHabit.mutateAsync(newHabit.trim());
       setNewHabit('');
@@ -125,6 +133,14 @@ export default function Habits() {
           </div>
         )}
       </div>
+
+      {!features.unlimitedHabits && habits.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          {habits.length}/{features.maxHabits} hábitos • Upgrade para ilimitados
+        </p>
+      )}
+
+      <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} featureLabel="Hábitos ilimitados" />
     </div>
   );
 }

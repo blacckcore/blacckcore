@@ -4,6 +4,7 @@ import { useSavings } from '@/hooks/useSavings';
 import { useIncome } from '@/hooks/useIncome';
 import { useHabits } from '@/hooks/useHabits';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { FeatureGate } from '@/components/FeatureGate';
 
 const COLORS = ['hsl(0,0%,75%)', 'hsl(0,0%,60%)', 'hsl(0,0%,45%)', 'hsl(0,0%,35%)', 'hsl(142,70%,45%)', 'hsl(38,92%,50%)'];
 
@@ -73,19 +74,21 @@ export default function Analytics() {
           </ResponsiveContainer>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 lg:col-span-2">
-          <h2 className="text-lg font-semibold font-display mb-4">Consistência dos Hábitos (%)</h2>
-          {habitData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={habitData}>
-                <XAxis dataKey="name" stroke="hsl(0,0%,55%)" fontSize={12} />
-                <YAxis stroke="hsl(0,0%,55%)" fontSize={12} domain={[0, 100]} />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' }} />
-                <Bar dataKey="consistency" fill="hsl(142,70%,45%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p className="text-muted-foreground text-sm text-center py-8">Sem dados de hábitos</p>}
-        </motion.div>
+        <FeatureGate feature="advancedAnalytics" label="Análises avançadas">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 lg:col-span-2">
+            <h2 className="text-lg font-semibold font-display mb-4">Consistência dos Hábitos (%)</h2>
+            {habitData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={habitData}>
+                  <XAxis dataKey="name" stroke="hsl(0,0%,55%)" fontSize={12} />
+                  <YAxis stroke="hsl(0,0%,55%)" fontSize={12} domain={[0, 100]} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' }} />
+                  <Bar dataKey="consistency" fill="hsl(142,70%,45%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-muted-foreground text-sm text-center py-8">Sem dados de hábitos</p>}
+          </motion.div>
+        </FeatureGate>
       </div>
     </div>
   );
