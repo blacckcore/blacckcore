@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/lib/auth';
+import { PremiumBadge } from '@/components/PremiumBadge';
 import {
   Sidebar,
   SidebarContent,
@@ -43,9 +44,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
         {!collapsed && (
-          <h2 className="text-lg font-bold font-display text-gradient-silver truncate">
-            Painel de Controle
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold font-display text-gradient-silver truncate">
+              Painel de Controle
+            </h2>
+            <PremiumBadge />
+          </div>
         )}
         {collapsed && (
           <span className="text-xl font-bold text-gradient-silver block text-center">P</span>

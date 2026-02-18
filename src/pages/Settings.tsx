@@ -10,14 +10,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { getRemindersEnabled, setRemindersEnabled, getNotificationEngagement } from '@/hooks/useNotifications';
+import { TierBadge } from '@/components/PremiumBadge';
+import { FeatureGate } from '@/components/FeatureGate';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/UpgradeModal';
 
 export default function SettingsPage() {
   const { categories, addCategory, deleteCategory } = useCategories();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { tier, isPremium } = useSubscription();
   const [newCat, setNewCat] = useState('');
   const [reminders, setReminders] = useState(getRemindersEnabled);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const handleExport = async () => {
     try {
@@ -61,9 +67,32 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-3xl font-bold font-display text-gradient-silver">Configurações</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-display text-gradient-silver">Configurações</h1>
+          <TierBadge />
+        </div>
         <p className="text-muted-foreground text-sm">{user?.email}</p>
       </motion.div>
+
+      {!isPremium && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="glass-card p-4 border-amber-500/20 cursor-pointer hover:border-amber-500/40 transition-colors"
+          onClick={() => setShowUpgrade(true)}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">🚀 Upgrade para Premium</p>
+              <p className="text-xs text-muted-foreground">Desbloqueie análises avançadas, hábitos ilimitados e mais</p>
+            </div>
+            <Button size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-bold hover:from-amber-600 hover:to-yellow-500">
+              Upgrade
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 space-y-4">
         <h2 className="text-lg font-semibold font-display">Categorias</h2>
@@ -131,9 +160,11 @@ export default function SettingsPage() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 space-y-4">
         <h2 className="text-lg font-semibold font-display">Dados</h2>
-        <Button variant="outline" onClick={handleExport} className="w-full border-border">
-          <Download className="h-4 w-4 mr-2" /> Exportar CSV
-        </Button>
+        <FeatureGate feature="exportData" label="Exportar dados">
+          <Button variant="outline" onClick={handleExport} className="w-full border-border">
+            <Download className="h-4 w-4 mr-2" /> Exportar CSV
+          </Button>
+        </FeatureGate>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 space-y-4 border-destructive/30">
@@ -154,6 +185,8 @@ export default function SettingsPage() {
           </DialogContent>
         </Dialog>
       </motion.div>
+
+      <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} />
     </div>
   );
 }
