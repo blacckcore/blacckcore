@@ -38,6 +38,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -141,6 +165,7 @@ export type Database = {
           created_at: string
           expected_date: string
           id: string
+          income_type_id: string | null
           source: string
           status: string
           updated_at: string
@@ -151,6 +176,7 @@ export type Database = {
           created_at?: string
           expected_date?: string
           id?: string
+          income_type_id?: string | null
           source: string
           status?: string
           updated_at?: string
@@ -161,9 +187,45 @@ export type Database = {
           created_at?: string
           expected_date?: string
           id?: string
+          income_type_id?: string | null
           source?: string
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_income_type_id_fkey"
+            columns: ["income_type_id"]
+            isOneToOne: false
+            referencedRelation: "income_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      income_types: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
           user_id?: string
         }
         Relationships: []

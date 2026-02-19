@@ -20,7 +20,7 @@ export function useIncome() {
   });
 
   const addIncome = useMutation({
-    mutationFn: async (income: { source: string; amount: number; expected_date: string; status: string }) => {
+    mutationFn: async (income: { source: string; amount: number; expected_date: string; status: string; income_type_id?: string | null }) => {
       const { error } = await supabase.from('income').insert({ ...income, user_id: user!.id });
       if (error) throw error;
     },
@@ -28,7 +28,7 @@ export function useIncome() {
   });
 
   const updateIncome = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; source?: string; amount?: number; expected_date?: string; status?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; source?: string; amount?: number; expected_date?: string; status?: string; income_type_id?: string | null }) => {
       const { error } = await supabase.from('income').update(updates).eq('id', id);
       if (error) throw error;
     },
