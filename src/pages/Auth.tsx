@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -56,7 +57,12 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Theme toggle – top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Left panel – decorative */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden items-center justify-center p-12">
         {/* Subtle gradient noise background */}
