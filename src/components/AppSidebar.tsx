@@ -41,58 +41,72 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
-      <div className="p-4 border-b border-border/50">
-        {!collapsed && (
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold font-display text-gradient-silver truncate">
-              Painel de Controle
-            </h2>
-            <PremiumBadge />
+    <Sidebar collapsible="icon" className="border-r-0">
+      <div
+        className="h-full flex flex-col"
+        style={{
+          background: 'hsl(var(--sidebar-background))',
+          borderRight: '1px solid hsl(var(--sidebar-border))',
+        }}
+      >
+        {/* Logo */}
+        <div className="px-5 py-5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl gradient-silver flex items-center justify-center shrink-0 shadow-[0_2px_12px_hsl(var(--glow-silver-strong))]">
+            <span className="text-xs font-bold text-primary-foreground">P</span>
           </div>
-        )}
-        {collapsed && (
-          <span className="text-xl font-bold text-gradient-silver block text-center">P</span>
-        )}
+          {!collapsed && (
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold font-display text-gradient-silver truncate tracking-tight">
+                Painel de Controle
+              </h2>
+              <PremiumBadge />
+            </div>
+          )}
+        </div>
+
+        <div className="divider mx-4 mb-2" />
+
+        {/* Nav */}
+        <SidebarContent className="flex-1 px-3 py-2">
+          <SidebarGroup className="p-0">
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === '/'}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/80 transition-all duration-200 group"
+                        activeClassName="nav-active text-foreground"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0 transition-colors" />
+                        {!collapsed && <span className="font-medium">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        {/* Footer */}
+        <div className="divider mx-4 mt-2" />
+        <SidebarFooter className="p-3">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={signOut}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-all duration-200 cursor-pointer w-full"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                {!collapsed && <span className="font-medium">Sair</span>}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </div>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === '/'}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
-                      activeClassName="text-foreground bg-accent glow-silver"
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-border/50 p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={signOut}
-              className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-            >
-              <LogOut className="h-5 w-5 shrink-0" />
-              <span>Sair</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

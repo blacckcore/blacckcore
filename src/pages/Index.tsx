@@ -34,25 +34,31 @@ const Index = () => {
   const statData: Record<string, { value: string; icon: any; subtitle?: string }> = {
     savings: { value: formatCurrency(Number(savings?.total_saved ?? 0)), icon: Wallet },
     expenses: { value: formatCurrency(totalExpenses), icon: TrendingDown },
-    income: { value: formatCurrency(totalPending), icon: TrendingUp, subtitle: `${formatCurrency(totalReceived)} recebido` },
+    income: {
+      value: formatCurrency(totalPending),
+      icon: TrendingUp,
+      subtitle: `${formatCurrency(totalReceived)} recebido`,
+    },
     habits: { value: `${completedToday}/${habits.length}`, icon: Target },
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* Page header */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="flex items-center justify-between"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="flex items-end justify-between gap-4"
       >
-        <div>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver mb-1">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Visão geral das suas finanças e produtividade</p>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Visão geral</p>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver leading-none">Dashboard</h1>
         </div>
         <DashboardCustomizer />
       </motion.div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <AnimatePresence mode="popLayout">
           {statBlocks.map((block, i) => {
@@ -62,17 +68,17 @@ const Index = () => {
               <motion.div
                 key={block.id}
                 layout
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: i * 0.08 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ delay: i * 0.07, ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
               >
                 <StatCard
                   title={block.title}
                   value={data.value}
                   icon={data.icon}
                   subtitle={data.subtitle}
-                  delay={i * 0.08}
+                  delay={i * 0.07}
                 />
               </motion.div>
             );
@@ -80,55 +86,90 @@ const Index = () => {
         </AnimatePresence>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AnimatePresence mode="popLayout">
-          {bottomBlocks.map((block, i) => (
-            <motion.div
-              key={block.id}
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: 0.3 + i * 0.1 }}
-              whileHover={{ scale: 1.01 }}
-              className="glass-card p-6 space-y-4 hover:shadow-[0_0_30px_hsl(var(--glow-silver))] transition-shadow duration-500"
-            >
-              {block.id === 'daily-progress' && (
-                <>
-                  <h2 className="text-lg font-semibold font-display text-foreground">{block.title}</h2>
-                  <ProgressBar
-                    value={completedToday}
-                    max={habits.length || 1}
-                    label="Hábitos completados"
-                    glow
-                  />
-                  <div className="text-sm text-muted-foreground">
-                    {completedToday === habits.length && habits.length > 0
-                      ? '🎯 Todos os hábitos completados!'
-                      : `Faltam ${habits.length - completedToday} hábitos`}
-                  </div>
-                </>
-              )}
-              {block.id === 'savings-goal' && (
-                <>
-                  <h2 className="text-lg font-semibold font-display text-foreground">{block.title}</h2>
-                  <ProgressBar
-                    value={Number(savings?.total_saved ?? 0)}
-                    max={Number(savings?.goal_amount ?? 1)}
-                    label={`${formatCurrency(Number(savings?.total_saved ?? 0))} de ${formatCurrency(Number(savings?.goal_amount ?? 0))}`}
-                    glow
-                  />
-                  {savings?.goal_date && (
-                    <div className="text-sm text-muted-foreground">
-                      Meta até: {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+      {/* Bottom blocks */}
+      {bottomBlocks.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <AnimatePresence mode="popLayout">
+            {bottomBlocks.map((block, i) => (
+              <motion.div
+                key={block.id}
+                layout
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ delay: 0.28 + i * 0.1, ease: [0.16, 1, 0.3, 1], duration: 0.45 }}
+                whileHover={{ y: -3, transition: { duration: 0.25 } }}
+                className="glass-card card-highlight p-6 space-y-5"
+              >
+                {block.id === 'daily-progress' && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">
+                          Progresso
+                        </p>
+                        <h2 className="text-base font-semibold font-display text-foreground leading-none">
+                          {block.title}
+                        </h2>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold font-display text-gradient-silver">
+                          {completedToday}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-medium">
+                          /{habits.length}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+                    <ProgressBar
+                      value={completedToday}
+                      max={habits.length || 1}
+                      label="Hábitos completados"
+                      glow
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {completedToday === habits.length && habits.length > 0
+                        ? '🎯 Todos os hábitos completados hoje!'
+                        : `${habits.length - completedToday} hábito${habits.length - completedToday !== 1 ? 's' : ''} restante${habits.length - completedToday !== 1 ? 's' : ''}`}
+                    </p>
+                  </>
+                )}
+
+                {block.id === 'savings-goal' && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">
+                          Poupança
+                        </p>
+                        <h2 className="text-base font-semibold font-display text-foreground leading-none">
+                          {block.title}
+                        </h2>
+                      </div>
+                      {savings?.goal_date && (
+                        <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg border border-border/60">
+                          {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                    <ProgressBar
+                      value={Number(savings?.total_saved ?? 0)}
+                      max={Number(savings?.goal_amount ?? 1)}
+                      label={`${formatCurrency(Number(savings?.total_saved ?? 0))} de ${formatCurrency(Number(savings?.goal_amount ?? 0))}`}
+                      glow
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {savings?.goal_amount
+                        ? `Faltam ${formatCurrency(Math.max(0, Number(savings.goal_amount) - Number(savings.total_saved ?? 0)))} para atingir a meta`
+                        : 'Defina uma meta de poupança'}
+                    </p>
+                  </>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };
