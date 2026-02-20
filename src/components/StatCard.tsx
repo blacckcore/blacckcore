@@ -15,43 +15,46 @@ interface StatCardProps {
 export function StatCard({ title, value, icon: Icon, subtitle, delay = 0, expandedContent }: StatCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-      whileHover={{ scale: 1.02, y: -2 }}
-      className="glass-card p-5 hover:border-silver-dark/30 transition-all duration-300 group cursor-default hover:shadow-[0_0_30px_hsl(var(--glow-silver))]"
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -3, transition: { duration: 0.25, ease: 'easeOut' } }}
+      className="glass-card card-highlight p-6 group cursor-default"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          <AnimatedCounter
-            value={value}
-            className="text-2xl font-bold font-display text-foreground truncate block"
-          />
-          {subtitle && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: delay + 0.3 }}
-              className="text-xs text-muted-foreground mt-1"
-            >
-              {subtitle}
-            </motion.p>
-          )}
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest leading-none pt-0.5">
+          {title}
+        </p>
+        <div className="p-2 rounded-xl gradient-silver-subtle border border-border/80 group-hover:border-silver/20 transition-colors duration-300 shrink-0">
+          <Icon className="h-3.5 w-3.5 text-silver group-hover:text-silver-light transition-colors duration-300" />
         </div>
-        <motion.div
-          className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors"
-          whileHover={{ rotate: 12 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          <Icon className="h-5 w-5 text-silver group-hover:text-silver-light transition-colors" />
-        </motion.div>
       </div>
+
+      {/* Value */}
+      <AnimatedCounter
+        value={value}
+        className="text-2xl font-bold font-display text-foreground tracking-tight leading-none block mb-1.5"
+      />
+
+      {/* Subtitle */}
+      {subtitle && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: delay + 0.25 }}
+          className="text-xs text-muted-foreground leading-relaxed"
+        >
+          {subtitle}
+        </motion.p>
+      )}
+
+      {/* Expanded content */}
       {expandedContent && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          className="mt-3 pt-3 border-t border-border/50"
+          className="mt-4 pt-4 border-t border-border/60"
         >
           {expandedContent}
         </motion.div>
