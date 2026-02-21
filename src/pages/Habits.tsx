@@ -21,6 +21,7 @@ export default function Habits() {
     if (!newHabit.trim()) return;
     if (habits.length >= features.maxHabits) {
       setShowUpgrade(true);
+      toast({ title: 'Limite atingido', description: 'Você atingiu o limite do plano gratuito.', variant: 'destructive' });
       return;
     }
     try {

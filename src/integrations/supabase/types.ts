@@ -62,12 +62,79 @@ export type Database = {
         }
         Relationships: []
       }
+      debts: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          interest_rate: number
+          minimum_payment: number
+          name: string
+          remaining_amount: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number
+          minimum_payment?: number
+          name: string
+          remaining_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number
+          minimum_payment?: number
+          name?: string
+          remaining_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expense_types: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
           category_id: string | null
           created_at: string
           date: string
+          expense_type_id: string | null
           id: string
           name: string
           status: string
@@ -79,6 +146,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           date?: string
+          expense_type_id?: string | null
           id?: string
           name: string
           status?: string
@@ -90,6 +158,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           date?: string
+          expense_type_id?: string | null
           id?: string
           name?: string
           status?: string
@@ -102,6 +171,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_expense_type_id_fkey"
+            columns: ["expense_type_id"]
+            isOneToOne: false
+            referencedRelation: "expense_types"
             referencedColumns: ["id"]
           },
         ]

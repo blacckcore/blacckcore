@@ -27,7 +27,7 @@ export function useExpenses(month?: number, year?: number) {
   });
 
   const addExpense = useMutation({
-    mutationFn: async (expense: { name: string; category_id?: string; amount: number; date: string; status: string }) => {
+    mutationFn: async (expense: { name: string; category_id?: string; expense_type_id?: string | null; amount: number; date: string; status: string }) => {
       const { error } = await supabase.from('expenses').insert({ ...expense, user_id: user!.id });
       if (error) throw error;
     },
@@ -35,7 +35,7 @@ export function useExpenses(month?: number, year?: number) {
   });
 
   const updateExpense = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; category_id?: string; amount?: number; date?: string; status?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; category_id?: string; expense_type_id?: string | null; amount?: number; date?: string; status?: string }) => {
       const { error } = await supabase.from('expenses').update(updates).eq('id', id);
       if (error) throw error;
     },

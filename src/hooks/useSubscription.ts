@@ -17,7 +17,7 @@ const FREE_FEATURES: FeatureAccess = {
   advancedAnalytics: false,
   customThemes: false,
   exportData: false,
-  maxHabits: 3,
+  maxHabits: 5,
 };
 
 const PREMIUM_FEATURES: FeatureAccess = {
