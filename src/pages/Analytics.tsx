@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useExpenseTypes } from '@/hooks/useExpenseTypes';
 import { useSavings } from '@/hooks/useSavings';
 import { useIncome } from '@/hooks/useIncome';
 import { useHabits } from '@/hooks/useHabits';
@@ -11,14 +12,24 @@ const COLORS = ['hsl(0,0%,75%)', 'hsl(0,0%,60%)', 'hsl(0,0%,45%)', 'hsl(0,0%,35%
 
 const tooltipStyle = { backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 export default function Analytics() {
   const { expenses } = useExpenses();
+  const { expenseTypes } = useExpenseTypes();
   const { savings } = useSavings();
   const { income, totalReceived, totalPending } = useIncome();
   const { habits, completions } = useHabits();
   const { incomeTypes } = useIncomeTypes();
 
-  // Expenses by category
+  // Expenses by type
+  const expensesByType = expenseTypes.map(t => {
+    const total = expenses.filter((e: any) => e.expense_type_id === t.id).reduce((s, e) => s + Number(e.amount), 0);
+    return { name: t.name, value: total, color: t.color };
+  }).filter(d => d.value > 0);
+
+  // Fallback: expenses by old category
   const categoryMap = new Map<string, number>();
   expenses.forEach(e => {
     const cat = (e as any).categories?.name || 'Sem categoria';
@@ -26,7 +37,6 @@ export default function Analytics() {
   });
   const categoryData = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value }));
 
-  // Income vs Expenses
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const comparisonData = [
     { name: 'Receita', value: totalReceived },
@@ -34,13 +44,11 @@ export default function Analytics() {
     { name: 'Pendente', value: totalPending },
   ];
 
-  // Income by type
   const incomeByType = incomeTypes.map(t => {
     const total = income.filter(i => (i as any).income_type_id === t.id).reduce((s, i) => s + Number(i.amount), 0);
     return { name: t.name, value: total, color: t.color };
   }).filter(d => d.value > 0);
 
-  // Habit consistency per habit
   const habitData = habits.map(h => {
     const now = new Date();
     const daysPassed = now.getDate();
@@ -56,6 +64,10 @@ export default function Analytics() {
     visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1 } }),
   };
 
+  // Use expense types chart if available, otherwise fall back to categories
+  const expensePieData = expensesByType.length > 0 ? expensesByType : categoryData;
+  const expensePieTitle = expensesByType.length > 0 ? 'Despesas por Tipo' : 'Despesas por Categoria';
+
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -68,14 +80,14 @@ export default function Analytics() {
           whileHover={{ scale: 1.01 }}
           className="glass-card p-6 hover:shadow-[0_0_30px_hsl(var(--glow-silver))] transition-shadow duration-500"
         >
-          <h2 className="text-lg font-semibold font-display mb-4">Despesas por Categoria</h2>
-          {categoryData.length > 0 ? (
+          <h2 className="text-lg font-semibold font-display mb-4">{expensePieTitle}</h2>
+          {expensePieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                <Pie data={expensePieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  {expensePieData.map((d: any, i) => <Cell key={i} fill={d.color || COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
               </PieChart>
             </ResponsiveContainer>
           ) : <p className="text-muted-foreground text-sm text-center py-8">Sem dados</p>}
@@ -91,13 +103,12 @@ export default function Analytics() {
             <BarChart data={comparisonData}>
               <XAxis dataKey="name" stroke="hsl(0,0%,55%)" fontSize={12} />
               <YAxis stroke="hsl(0,0%,55%)" fontSize={12} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="value" fill="hsl(0,0%,75%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
 
-        {/* Income by source */}
         {incomeByType.length > 0 && (
           <motion.div
             variants={cardVariants} initial="hidden" animate="visible" custom={2}
@@ -110,7 +121,7 @@ export default function Analytics() {
                 <Pie data={incomeByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                   {incomeByType.map((d, i) => <Cell key={i} fill={d.color} />)}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
               </PieChart>
             </ResponsiveContainer>
           </motion.div>

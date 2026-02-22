@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, Palette, Filter, UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Palette, Filter, UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useExpenseTypes, EXPENSE_COLORS, EXPENSE_ICONS } from '@/hooks/useExpenseTypes';
 import { useToast } from '@/hooks/use-toast';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   Dialog,
   DialogContent,
@@ -15,25 +16,27 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-const ICON_COMPONENTS: Record<string, any> = { UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle };
+const ICON_COMPONENTS: Record<string, any> = { UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle, Receipt };
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
+const tooltipStyle = { backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' };
+
 export default function Expenses() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year] = useState(new Date().getFullYear());
-  const { expenses, total, addExpense, updateExpense, deleteExpense } = useExpenses(month, year);
+  const { expenses, total, totalPaid, addExpense, updateExpense, deleteExpense } = useExpenses(month, year);
   const { expenseTypes, seedDefaults, addType, deleteType, loading: typesLoading } = useExpenseTypes();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [form, setForm] = useState({ name: '', expense_type_id: '', amount: '', date: new Date().toISOString().split('T')[0], status: 'pending' });
   const [newType, setNewType] = useState({ name: '', color: EXPENSE_COLORS[0], icon: 'CreditCard' });
 
-  // Seed defaults if no types exist
   useEffect(() => {
     if (!typesLoading && expenseTypes.length === 0) {
       seedDefaults.mutateAsync();
@@ -68,7 +71,6 @@ export default function Expenses() {
     if (!newType.name) return;
     await addType.mutateAsync(newType);
     setNewType({ name: '', color: EXPENSE_COLORS[0], icon: 'CreditCard' });
-    setTypeOpen(false);
   };
 
   const startEdit = (exp: any) => {
@@ -77,7 +79,11 @@ export default function Expenses() {
     setOpen(true);
   };
 
-  const filteredExpenses = filterType === 'all' ? expenses : expenses.filter((e: any) => e.expense_type_id === filterType);
+  // Filtering: type + status
+  const filteredExpenses = expenses
+    .filter((e: any) => filterType === 'all' || e.expense_type_id === filterType)
+    .filter((e: any) => filterStatus === 'all' || e.status === filterStatus);
+
   const getTypeForItem = (item: any) => expenseTypes.find(t => t.id === item.expense_type_id);
 
   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -89,12 +95,14 @@ export default function Expenses() {
     return { ...t, total: typeTotal, count: items.length };
   }).filter(t => t.count > 0);
 
+  const totalPending = total - totalPaid;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h1 className="text-3xl font-bold font-display text-gradient-silver">Despesas</h1>
-          <p className="text-muted-foreground text-sm">Total: {formatCurrency(total)}</p>
+          <p className="text-muted-foreground text-sm">Total: {formatCurrency(total)} · Pago: {formatCurrency(totalPaid)} · Pendente: {formatCurrency(totalPending)}</p>
         </motion.div>
         <div className="flex gap-2 items-center">
           <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
@@ -134,12 +142,10 @@ export default function Expenses() {
                 </div>
                 <div className="border-t border-border pt-3 space-y-2">
                   <Input placeholder="Nome do tipo" value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} className="bg-secondary border-border" />
-                  <div className="flex gap-2">
-                    <div className="flex gap-1 flex-wrap flex-1">
-                      {EXPENSE_COLORS.map(c => (
-                        <button key={c} onClick={() => setNewType({ ...newType, color: c })} className={`w-6 h-6 rounded-full border-2 transition-all ${newType.color === c ? 'border-foreground scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
-                      ))}
-                    </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {EXPENSE_COLORS.map(c => (
+                      <button key={c} onClick={() => setNewType({ ...newType, color: c })} className={`w-6 h-6 rounded-full border-2 transition-all ${newType.color === c ? 'border-foreground scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                    ))}
                   </div>
                   <div className="flex gap-1 flex-wrap">
                     {EXPENSE_ICONS.map(iconName => {
@@ -181,7 +187,7 @@ export default function Expenses() {
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Não pago</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
                     <SelectItem value="paid">Pago</SelectItem>
                   </SelectContent>
                 </Select>
@@ -194,34 +200,61 @@ export default function Expenses() {
         </div>
       </div>
 
-      {/* Analytics by type */}
+      {/* Analytics: chips + mini pie */}
       {byType.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-4">
           <h3 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h3>
-          <div className="flex gap-3 flex-wrap">
-            {byType.map(t => {
-              const IC = ICON_COMPONENTS[t.icon] || CreditCard;
-              return (
-                <motion.div key={t.id} whileHover={{ scale: 1.05 }} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 border border-border/50">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-                  <IC className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium">{t.name}</span>
-                  <span className="text-xs text-muted-foreground">{formatCurrency(t.total)}</span>
-                </motion.div>
-              );
-            })}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-2 flex-wrap flex-1">
+              {byType.map(t => {
+                const IC = ICON_COMPONENTS[t.icon] || CreditCard;
+                const isActive = filterType === t.id;
+                return (
+                  <motion.button
+                    key={t.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setFilterType(isActive ? 'all' : t.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${isActive ? 'bg-accent border-foreground/20' : 'bg-secondary/50 border-border/50'}`}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                    <IC className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{formatCurrency(t.total)}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+            <div className="w-32 h-32 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={byType} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={50} innerRadius={25} paddingAngle={2}>
+                    {byType.map((t, i) => <Cell key={i} fill={t.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </motion.div>
       )}
 
-      {/* Filter */}
-      <div className="flex items-center gap-2">
+      {/* Filters */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-48 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {expenseTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-32 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {expenseTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            <SelectItem value="paid">Pago</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -248,10 +281,15 @@ export default function Expenses() {
                     <IC className="h-4 w-4 text-silver" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{exp.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground truncate">{exp.name}</p>
+                      {type && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: type.color + '22', color: type.color }}>
+                          {type.name}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex gap-2 text-xs text-muted-foreground">
-                      {type && <span>{type.name}</span>}
-                      {type && <span>•</span>}
                       <span>{new Date(exp.date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                       <span>•</span>
                       <span className={exp.status === 'paid' ? 'text-success' : 'text-warning'}>
@@ -277,7 +315,7 @@ export default function Expenses() {
         </AnimatePresence>
         {filteredExpenses.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            Nenhuma despesa neste mês
+            Nenhuma despesa encontrada
           </div>
         )}
       </div>
