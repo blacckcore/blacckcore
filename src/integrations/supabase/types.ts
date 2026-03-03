@@ -182,6 +182,92 @@ export type Database = {
           },
         ]
       }
+      goal_types: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          is_default: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          current_value: number
+          description: string | null
+          end_date: string | null
+          goal_type_id: string | null
+          id: string
+          progress_type: string
+          start_date: string
+          status: string
+          target_value: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          description?: string | null
+          end_date?: string | null
+          goal_type_id?: string | null
+          id?: string
+          progress_type?: string
+          start_date?: string
+          status?: string
+          target_value?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          description?: string | null
+          end_date?: string | null
+          goal_type_id?: string | null
+          id?: string
+          progress_type?: string
+          start_date?: string
+          status?: string
+          target_value?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_goal_type_id_fkey"
+            columns: ["goal_type_id"]
+            isOneToOne: false
+            referencedRelation: "goal_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habit_completions: {
         Row: {
           completed_date: string

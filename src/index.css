@@ -66,59 +66,59 @@
 
   /* ─── LIGHT ─── */
   .light {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 8%;
+    --background: 220 10% 97%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 0 0% 12%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 99%;
 
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 20%;
+    --secondary: 220 8% 94%;
+    --secondary-foreground: 0 0% 18%;
 
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 46%;
+    --muted: 220 8% 92%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 0 0% 92%;
-    --accent-foreground: 0 0% 8%;
+    --accent: 220 6% 91%;
+    --accent-foreground: 0 0% 7%;
 
     --destructive: 0 84% 56%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 0 0% 30%;
+    --border: 220 10% 88%;
+    --input: 220 10% 88%;
+    --ring: 0 0% 28%;
 
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 0 0% 30%;
-    --sidebar-primary: 0 0% 8%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 92%;
-    --sidebar-accent-foreground: 0 0% 8%;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 0 0% 30%;
+    --sidebar-background: 220 10% 96%;
+    --sidebar-foreground: 0 0% 28%;
+    --sidebar-primary: 0 0% 7%;
+    --sidebar-primary-foreground: 0 0% 99%;
+    --sidebar-accent: 220 6% 91%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 220 10% 88%;
+    --sidebar-ring: 0 0% 28%;
 
-    --silver: 0 0% 30%;
-    --silver-light: 0 0% 15%;
-    --silver-dark: 0 0% 55%;
-    --silver-subtle: 0 0% 85%;
+    --silver: 0 0% 28%;
+    --silver-light: 0 0% 12%;
+    --silver-dark: 0 0% 52%;
+    --silver-subtle: 220 8% 86%;
 
-    --success: 142 60% 36%;
+    --success: 142 60% 34%;
     --success-foreground: 0 0% 98%;
-    --warning: 38 90% 44%;
+    --warning: 38 90% 42%;
     --warning-foreground: 0 0% 5%;
 
-    --glow-silver: 0 0% 20% / 0.06;
-    --glow-silver-strong: 0 0% 20% / 0.12;
-    --glow-success: 142 60% 36% / 0.12;
+    --glow-silver: 0 0% 18% / 0.05;
+    --glow-silver-strong: 0 0% 18% / 0.1;
+    --glow-success: 142 60% 34% / 0.1;
 
-    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.06), 0 4px 16px hsl(0 0% 0% / 0.06);
-    --shadow-card-hover: 0 4px 12px hsl(0 0% 0% / 0.1), 0 12px 32px hsl(0 0% 0% / 0.08), 0 0 0 1px hsl(var(--border));
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.04), 0 2px 8px hsl(0 0% 0% / 0.04), 0 0 0 1px hsl(220 10% 88% / 0.6);
+    --shadow-card-hover: 0 4px 16px hsl(0 0% 0% / 0.08), 0 8px 32px hsl(0 0% 0% / 0.06), 0 0 0 1px hsl(220 10% 84%);
   }
 }
 
@@ -186,11 +186,12 @@
     border-color: hsl(var(--silver) / 0.18);
   }
 
-  /* Light mode card is solid, not glassy */
+  /* Light mode card — elevated, refined */
   .light .glass-card {
     background: hsl(var(--card));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: hsl(220 10% 90%);
   }
 
   .card-highlight {
