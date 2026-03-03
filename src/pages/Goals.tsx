@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target, TrendingUp, Award, CheckCircle2, Plus, Trash2, Calendar,
   DollarSign, Heart, Briefcase, BookOpen, Activity, Clock, Filter,
-  ChevronDown, X
+  ChevronDown, X, Zap, Gauge, Rocket
 } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import { ProgressBar } from '@/components/ProgressBar';
@@ -362,6 +362,149 @@ export default function Goals() {
           })}
         </AnimatePresence>
       </div>
+
+      {/* Scenario Simulator */}
+      {activeGoals.length > 0 && <ScenarioSimulator goals={activeGoals} />}
     </div>
+  );
+}
+
+/* ─── Scenario Simulator Component ─── */
+
+interface Scenario {
+  label: string;
+  icon: any;
+  multiplier: number;
+  color: string;
+  description: string;
+}
+
+const SCENARIOS: Scenario[] = [
+  { label: 'Conservador', icon: Gauge, multiplier: 0.7, color: 'hsl(var(--warning))', description: 'Ritmo mais lento, sem pressão' },
+  { label: 'Moderado', icon: TrendingUp, multiplier: 1.0, color: 'hsl(var(--silver))', description: 'Mantendo o ritmo atual' },
+  { label: 'Otimista', icon: Rocket, multiplier: 1.5, color: 'hsl(var(--success))', description: 'Acelerando o progresso' },
+];
+
+function ScenarioSimulator({ goals }: { goals: Goal[] }) {
+  const [selectedScenario, setSelectedScenario] = useState(1); // default moderado
+
+  const projections = useMemo(() => {
+    return SCENARIOS.map(scenario => {
+      const goalProjections = goals.map(goal => {
+        const remaining = goal.target_value - goal.current_value;
+        if (remaining <= 0) return { ...goal, daysLeft: 0, projectedDate: 'Concluída' };
+
+        // Calculate daily rate from start to now
+        const startDate = new Date(goal.start_date);
+        const now = new Date();
+        const daysSinceStart = Math.max(1, Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const dailyRate = (goal.current_value / daysSinceStart) * scenario.multiplier;
+
+        if (dailyRate <= 0) return { ...goal, daysLeft: Infinity, projectedDate: 'Sem dados suficientes' };
+
+        const daysLeft = Math.ceil(remaining / dailyRate);
+        const projDate = new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000);
+
+        return {
+          ...goal,
+          daysLeft,
+          projectedDate: projDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+          onTrack: goal.end_date ? projDate <= new Date(goal.end_date) : true,
+        };
+      });
+
+      const avgDays = goalProjections.filter(g => g.daysLeft !== Infinity && g.daysLeft > 0);
+      const averageDaysLeft = avgDays.length > 0 ? Math.round(avgDays.reduce((s, g) => s + g.daysLeft, 0) / avgDays.length) : 0;
+
+      return { scenario, goalProjections, averageDaysLeft };
+    });
+  }, [goals]);
+
+  const current = projections[selectedScenario];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="glass-card p-5 space-y-4"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-silver" />
+          <h2 className="text-sm font-semibold font-display">Simulador de Cenários</h2>
+        </div>
+        <span className="text-[10px] text-muted-foreground">Baseado no seu ritmo atual</span>
+      </div>
+
+      {/* Scenario tabs */}
+      <div className="grid grid-cols-3 gap-2">
+        {SCENARIOS.map((s, i) => {
+          const Icon = s.icon;
+          const isActive = selectedScenario === i;
+          return (
+            <button
+              key={s.label}
+              onClick={() => setSelectedScenario(i)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                isActive
+                  ? 'border-silver/30 bg-secondary/80 shadow-sm'
+                  : 'border-transparent bg-secondary/30 hover:bg-secondary/50'
+              }`}
+            >
+              <Icon className="h-4 w-4" style={{ color: isActive ? s.color : undefined }} />
+              <span className="text-xs font-medium">{s.label}</span>
+              <span className="text-[10px] text-muted-foreground leading-tight text-center">{s.description}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Projections */}
+      <div className="space-y-2.5">
+        {current.goalProjections.map(proj => {
+          const pct = proj.target_value > 0 ? Math.min((proj.current_value / proj.target_value) * 100, 100) : 0;
+          return (
+            <div key={proj.id} className="flex items-center gap-3 py-1.5">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium truncate">{proj.title}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                    {proj.daysLeft === Infinity
+                      ? '—'
+                      : proj.daysLeft === 0
+                        ? '✓'
+                        : `${proj.daysLeft} dias`}
+                  </span>
+                </div>
+                <div className="h-1 bg-secondary/80 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: current.scenario.color }}
+                  />
+                </div>
+              </div>
+              <span className="text-[10px] text-muted-foreground shrink-0 w-20 text-right">
+                {proj.projectedDate}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Summary */}
+      {current.averageDaysLeft > 0 && (
+        <div className="pt-2 border-t border-border/60">
+          <p className="text-xs text-muted-foreground">
+            No cenário <span className="font-medium text-foreground">{current.scenario.label.toLowerCase()}</span>, suas metas serão concluídas em média em{' '}
+            <span className="font-semibold text-foreground">{current.averageDaysLeft} dias</span>
+            {current.averageDaysLeft > 30 && ` (~${Math.round(current.averageDaysLeft / 30)} meses)`}.
+          </p>
+        </div>
+      )}
+    </motion.div>
   );
 }
