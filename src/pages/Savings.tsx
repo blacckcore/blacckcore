@@ -393,7 +393,7 @@ export default function Savings() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">{debt.name}</span>
-                      <button onClick={() => deleteDebt.mutateAsync(debt.id)} className="text-muted-foreground hover:text-destructive">
+                      <button onClick={() => deleteDebt.mutateAsync(debt.id)} aria-label={`Excluir dívida ${debt.name}`} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

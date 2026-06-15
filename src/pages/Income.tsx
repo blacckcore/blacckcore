@@ -99,7 +99,7 @@ export default function Income() {
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
                         <IconComp className="h-4 w-4 text-muted-foreground" />
                         <span className="flex-1 text-sm">{t.name}</span>
-                        <button onClick={() => deleteType.mutateAsync(t.id)} className="text-muted-foreground hover:text-destructive">
+                        <button onClick={() => deleteType.mutateAsync(t.id)} aria-label={`Excluir tipo ${t.name}`} className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -235,8 +235,8 @@ export default function Income() {
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-foreground">{formatCurrency(Number(item.amount))}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setForm({ source: item.source, amount: String(item.amount), expected_date: item.expected_date, status: item.status, income_type_id: (item as any).income_type_id || '' }); setEditingId(item.id); setOpen(true); }} className="text-muted-foreground hover:text-foreground"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => deleteIncome.mutateAsync(item.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => { setForm({ source: item.source, amount: String(item.amount), expected_date: item.expected_date, status: item.status, income_type_id: (item as any).income_type_id || '' }); setEditingId(item.id); setOpen(true); }} aria-label={`Editar receita ${item.source}`} className="text-muted-foreground hover:text-foreground"><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => deleteIncome.mutateAsync(item.id)} aria-label={`Excluir receita ${item.source}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
               </motion.div>
