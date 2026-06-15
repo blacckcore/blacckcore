@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,9 +38,10 @@ export default function Auth() {
         });
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: 'Erro',
-        description: error.message,
+        description: getFriendlyErrorMessage(error, 'Não foi possível concluir. Tente novamente.'),
         variant: 'destructive',
       });
     } finally {
@@ -52,7 +54,8 @@ export default function Auth() {
       redirect_uri: window.location.origin,
     });
     if (error) {
-      toast({ title: 'Erro', description: (error as Error).message, variant: 'destructive' });
+      console.error('Google sign-in error:', error);
+      toast({ title: 'Erro', description: getFriendlyErrorMessage(error, 'Falha ao entrar com Google.'), variant: 'destructive' });
     }
   };
 
