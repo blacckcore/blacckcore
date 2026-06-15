@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Download, AlertTriangle, Bell } from 'lucide-react';
@@ -54,7 +55,7 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url);
       toast({ title: 'Exportado!', description: 'Arquivo CSV baixado.' });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 

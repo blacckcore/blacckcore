@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, Palette, Filter, UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle, Receipt } from 'lucide-react';
@@ -63,7 +64,7 @@ export default function Expenses() {
       setForm({ name: '', expense_type_id: '', amount: '', date: new Date().toISOString().split('T')[0], status: 'pending' });
       setOpen(false);
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 

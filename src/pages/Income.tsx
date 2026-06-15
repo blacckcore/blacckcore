@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, DollarSign, Briefcase, Laptop, TrendingUp, Coins, CreditCard, Banknote, Gem, Filter, Palette } from 'lucide-react';
@@ -52,7 +53,7 @@ export default function Income() {
       setForm({ source: '', amount: '', expected_date: new Date().toISOString().split('T')[0], status: 'pending', income_type_id: '' });
       setOpen(false);
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
