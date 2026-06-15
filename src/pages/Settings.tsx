@@ -114,7 +114,7 @@ export default function SettingsPage() {
           {categories.map(c => (
             <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent transition-colors">
               <span className="text-sm text-foreground">{c.name}</span>
-              <button onClick={() => deleteCategory.mutateAsync(c.id)} className="text-muted-foreground hover:text-destructive">
+              <button onClick={() => deleteCategory.mutateAsync(c.id)} aria-label={`Excluir categoria ${c.name}`} className="text-muted-foreground hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>

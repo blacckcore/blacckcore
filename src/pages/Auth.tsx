@@ -97,7 +97,7 @@ export default function Auth() {
           </div>
           <div>
             <h1 className="text-3xl font-bold font-display text-gradient-silver mb-3 tracking-tight">
-              Painel de Controle
+              Painel de Controle — Gestão Pessoal
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Controle suas finanças e hábitos com precisão. Uma plataforma premium para quem leva a sério o próprio crescimento.
@@ -131,7 +131,7 @@ export default function Auth() {
               <span className="text-base font-bold text-primary-foreground font-display">P</span>
             </div>
             <h1 className="text-2xl font-bold font-display text-gradient-silver tracking-tight">
-              Painel de Controle
+              Painel de Controle — Gestão Pessoal
             </h1>
           </div>
 

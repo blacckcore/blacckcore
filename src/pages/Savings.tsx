@@ -233,7 +233,7 @@ export default function Savings() {
                 <Shield className="h-5 w-5 text-silver" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Reserva Emergencial</h3>
+                <h2 className="font-semibold text-foreground">Reserva Emergencial</h2>
                 <p className="text-xs text-muted-foreground">
                   {reserveForm.type === 'auto' ? `Baseada em ${reserveMonths} meses de despesas` : 'Meta manual'}
                 </p>
@@ -352,7 +352,7 @@ export default function Savings() {
                 <TrendingDown className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Minhas Dívidas</h3>
+                <h2 className="font-semibold text-foreground">Minhas Dívidas</h2>
                 <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalDebt)}</p>
               </div>
             </div>
@@ -393,7 +393,7 @@ export default function Savings() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">{debt.name}</span>
-                      <button onClick={() => deleteDebt.mutateAsync(debt.id)} className="text-muted-foreground hover:text-destructive">
+                      <button onClick={() => deleteDebt.mutateAsync(debt.id)} aria-label={`Excluir dívida ${debt.name}`} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -420,7 +420,7 @@ export default function Savings() {
                 <Lightbulb className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Plano Inteligente de Saída</h3>
+                <h2 className="font-semibold text-foreground">Plano Inteligente de Saída</h2>
                 <p className="text-xs text-muted-foreground">Método bola de neve • Menor dívida primeiro</p>
               </div>
             </div>

@@ -107,7 +107,7 @@ export default function Habits() {
                     </div>
                   )}
                   <span className="text-xs text-muted-foreground">{consistency}% este mês</span>
-                  <button onClick={() => deleteHabit.mutateAsync(habit.id)} className="text-muted-foreground hover:text-destructive">
+                  <button onClick={() => deleteHabit.mutateAsync(habit.id)} aria-label={`Excluir hábito ${habit.name}`} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

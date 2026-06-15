@@ -53,7 +53,7 @@ const Index = () => {
       >
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Visão geral</p>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver leading-none">Dashboard</h1>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver leading-none">Dashboard Financeiro</h1>
         </div>
         <DashboardCustomizer />
       </motion.div>

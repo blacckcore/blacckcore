@@ -134,7 +134,7 @@ export default function Expenses() {
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
                         <IconComp className="h-4 w-4 text-muted-foreground" />
                         <span className="flex-1 text-sm">{t.name}</span>
-                        <button onClick={() => deleteType.mutateAsync(t.id)} className="text-muted-foreground hover:text-destructive">
+                        <button onClick={() => deleteType.mutateAsync(t.id)} aria-label={`Excluir tipo ${t.name}`} className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -204,7 +204,7 @@ export default function Expenses() {
       {/* Analytics: chips + mini pie */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-4">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h3>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h2>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex gap-2 flex-wrap flex-1">
               {byType.map(t => {
@@ -302,10 +302,10 @@ export default function Expenses() {
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-foreground">{formatCurrency(Number(exp.amount))}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => startEdit(exp)} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <button onClick={() => startEdit(exp)} aria-label={`Editar despesa ${exp.name}`} className="text-muted-foreground hover:text-foreground transition-colors">
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => deleteExpense.mutateAsync(exp.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                    <button onClick={() => deleteExpense.mutateAsync(exp.id)} aria-label={`Excluir despesa ${exp.name}`} className="text-muted-foreground hover:text-destructive transition-colors">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
