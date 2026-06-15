@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Flame } from 'lucide-react';
@@ -28,7 +29,7 @@ export default function Habits() {
       await addHabit.mutateAsync(newHabit.trim());
       setNewHabit('');
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 

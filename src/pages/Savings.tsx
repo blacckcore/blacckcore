@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PiggyBank, Edit2, Plus, Trash2, TrendingDown, Lightbulb, Shield, Sparkles } from 'lucide-react';
@@ -116,7 +117,7 @@ export default function Savings() {
       setEditing(false);
       toast({ title: 'Salvo!', description: 'Dados de economia atualizados.' });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -131,7 +132,7 @@ export default function Savings() {
       setReserveOpen(false);
       toast({ title: 'Reserva atualizada!', description: `Meta: ${formatCurrency(newGoal)}` });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -149,7 +150,7 @@ export default function Savings() {
       setDebtForm({ name: '', total_amount: '', remaining_amount: '', interest_rate: '', minimum_payment: '', due_date: '' });
       setDebtOpen(false);
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 

@@ -35,7 +35,7 @@ export function useDebts() {
   });
 
   const updateDebt = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; remaining_amount?: number; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<{ name: string; total_amount: number; remaining_amount: number; minimum_payment: number; interest_rate: number; due_date: string }>) => {
       const { error } = await supabase.from('debts').update(updates).eq('id', id);
       if (error) throw error;
     },

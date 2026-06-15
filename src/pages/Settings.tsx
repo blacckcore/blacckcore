@@ -1,3 +1,4 @@
+import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Download, AlertTriangle, Bell } from 'lucide-react';
@@ -31,18 +32,25 @@ export default function SettingsPage() {
       const { data: income } = await supabase.from('income').select('*');
       const { data: savings } = await supabase.from('savings').select('*');
 
+      const csvEscape = (v: unknown) => {
+        const s = String(v ?? '');
+        const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+        return `"${safe.replace(/"/g, '""')}"`;
+      };
+      const row = (...vals: unknown[]) => vals.map(csvEscape).join(',');
+
       const csvData = [
         '--- DESPESAS ---',
-        'Nome,Valor,Data,Status',
-        ...(expenses ?? []).map(e => `${e.name},${e.amount},${e.date},${e.status}`),
+        row('Nome', 'Valor', 'Data', 'Status'),
+        ...(expenses ?? []).map(e => row(e.name, e.amount, e.date, e.status)),
         '',
         '--- RECEITAS ---',
-        'Fonte,Valor,Data,Status',
-        ...(income ?? []).map(i => `${i.source},${i.amount},${i.expected_date},${i.status}`),
+        row('Fonte', 'Valor', 'Data', 'Status'),
+        ...(income ?? []).map(i => row(i.source, i.amount, i.expected_date, i.status)),
         '',
         '--- ECONOMIA ---',
-        'Total Guardado,Meta',
-        ...(savings ?? []).map(s => `${s.total_saved},${s.goal_amount}`),
+        row('Total Guardado', 'Meta'),
+        ...(savings ?? []).map(s => row(s.total_saved, s.goal_amount)),
       ].join('\n');
 
       const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -54,7 +62,7 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url);
       toast({ title: 'Exportado!', description: 'Arquivo CSV baixado.' });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
