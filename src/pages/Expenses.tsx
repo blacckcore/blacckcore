@@ -204,7 +204,7 @@ export default function Expenses() {
       {/* Analytics: chips + mini pie */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-4">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h3>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h2>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex gap-2 flex-wrap flex-1">
               {byType.map(t => {

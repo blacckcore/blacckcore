@@ -171,7 +171,7 @@ export default function Income() {
       {/* Analytics by type */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-4">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h3>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h2>
           <div className="flex gap-3 flex-wrap">
             {byType.map(t => {
               const IC = ICON_COMPONENTS[t.icon] || DollarSign;

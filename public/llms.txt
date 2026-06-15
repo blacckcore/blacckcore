@@ -1,0 +1,13 @@
+# Painel de Controle
+
+> Dashboard pessoal premium para acompanhar despesas, receitas, reserva financeira, dívidas, metas e hábitos diários em um só lugar.
+
+Painel de Controle é um aplicativo web de finanças pessoais e produtividade. O usuário registra despesas e receitas por categoria, define metas de poupança e reserva de emergência, planeja a quitação de dívidas (método bola de neve) e acompanha hábitos diários com gráficos de consistência.
+
+## Pages
+
+- [Entrar / Criar conta](/auth): Login por email/senha ou Google para acessar o painel.
+
+## Optional
+
+- [Home](/): Visão geral do dashboard (requer login).
