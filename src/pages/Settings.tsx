@@ -1,7 +1,7 @@
 import { getFriendlyErrorMessage } from '@/lib/errors';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trash2, Plus, Download, AlertTriangle, Bell } from 'lucide-react';
+import { Trash2, Plus, Download, AlertTriangle, Bell, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -25,6 +25,57 @@ export default function SettingsPage() {
   const [reminders, setReminders] = useState(getRemindersEnabled);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+
+  const normalizePhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.startsWith('55') ? `+${digits}` : `+55${digits}`;
+  };
+
+  const handleSaveWhatsapp = async () => {
+    if (!user) return;
+    const phone = normalizePhone(whatsappPhone);
+
+    if (phone.length < 13) {
+      toast({
+        title: 'WhatsApp inválido',
+        description: 'Digite com DDD. Exemplo: 11999999999.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSavingWhatsapp(true);
+    try {
+      const { error } = await supabase
+        .from('whatsapp_connections')
+        .upsert({
+          user_id: user.id,
+          phone_e164: phone,
+          display_name: user.email ?? 'WhatsApp',
+          is_active: true,
+        }, { onConflict: 'user_id,phone_e164' });
+
+      if (error) throw error;
+
+      setWhatsappPhone(phone);
+      toast({
+        title: 'WhatsApp conectado',
+        description: 'Agora mensagens desse número podem entrar no BlacckCore.',
+      });
+    } catch (e: unknown) {
+      console.error(e);
+      toast({
+        title: 'Erro',
+        description: getFriendlyErrorMessage(e, 'Não foi possível salvar o WhatsApp.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -61,7 +112,7 @@ export default function SettingsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: 'Exportado!', description: 'Arquivo CSV baixado.' });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
@@ -101,6 +152,42 @@ export default function SettingsPage() {
           </div>
         </motion.div>
       )}
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="glass-card p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className="p-2 rounded-xl border border-border/80"
+            style={{ background: 'hsl(var(--brand) / 0.1)' }}
+          >
+            <MessageCircle className="h-4 w-4" style={{ color: 'hsl(var(--brand))' }} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold font-display">WhatsApp inteligente</h2>
+            <p className="text-sm text-muted-foreground">
+              Conecte seu número para lançar gastos, receitas e hábitos direto pelo WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            placeholder="11999999999"
+            value={whatsappPhone}
+            onChange={e => setWhatsappPhone(e.target.value)}
+            className="bg-secondary border-border"
+          />
+          <Button onClick={handleSaveWhatsapp} disabled={savingWhatsapp}>
+            {savingWhatsapp ? 'Salvando...' : 'Conectar'}
+          </Button>
+        </div>
+
+        <div className="rounded-xl border border-border/70 bg-secondary/35 p-4 text-xs text-muted-foreground space-y-1">
+          <p className="font-medium text-foreground">Exemplos de mensagem:</p>
+          <p>gastei 25 mercado</p>
+          <p>recebi 500 cliente</p>
+          <p>completei treino</p>
+        </div>
+      </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 space-y-4">
         <h2 className="text-lg font-semibold font-display">Categorias</h2>
