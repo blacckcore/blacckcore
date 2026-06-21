@@ -28,12 +28,38 @@ SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 ```
 
+## Deploy automatico
+
+No PowerShell, dentro da pasta do projeto, rode:
+
+```powershell
+.\scripts\deploy-whatsapp.ps1
+```
+
+O script vai pedir:
+
+```text
+SUPABASE_ACCESS_TOKEN
+senha do banco Supabase
+WHATSAPP_VERIFY_TOKEN
+WHATSAPP_ACCESS_TOKEN
+```
+
+Ele faz sozinho:
+
+```text
+link do projeto Supabase
+migrations do banco
+secrets da funcao
+deploy do whatsapp-webhook publico
+```
+
 ## Webhook
 
 Depois do deploy, use esta URL no painel da Meta:
 
 ```text
-https://SEU_PROJECT_REF.supabase.co/functions/v1/whatsapp-webhook
+https://tguyjmkvwzfywuqbxmtn.supabase.co/functions/v1/whatsapp-webhook
 ```
 
 Eventos para assinar:
@@ -42,7 +68,17 @@ Eventos para assinar:
 messages
 ```
 
-## Vincular numero ao usuario
+## Vincular numero ao usuario pelo app
+
+Entre no BlacckCore e va em:
+
+```text
+Configuracoes > WhatsApp inteligente
+```
+
+Digite o telefone com DDD.
+
+## Vincular numero manualmente
 
 Insira uma linha em `whatsapp_connections`:
 
@@ -55,4 +91,4 @@ O telefone precisa estar em formato E.164, com `+55` no Brasil.
 
 ## Proximo passo
 
-Criar uma tela em Configuracoes para o usuario cadastrar o WhatsApp sem precisar mexer no banco.
+Conectar a Meta WhatsApp Cloud API e assinar o evento `messages`.
