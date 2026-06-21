@@ -521,6 +521,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          alert_style: string | null
+          completed_at: string | null
+          created_at: string
+          focus_area: string | null
+          id: string
+          main_difficulty: string | null
+          primary_goal: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_style?: string | null
+          completed_at?: string | null
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          main_difficulty?: string | null
+          primary_goal?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_style?: string | null
+          completed_at?: string | null
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          main_difficulty?: string | null
+          primary_goal?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
