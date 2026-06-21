@@ -118,6 +118,10 @@
     --warning: 38 90% 42%;
     --warning-foreground: 0 0% 5%;
 
+    --brand: 145 85% 36%;
+    --brand-foreground: 0 0% 100%;
+    --brand-glow: 145 85% 36% / 0.18;
+
     --glow-silver: 0 0% 18% / 0.05;
     --glow-silver-strong: 0 0% 18% / 0.1;
     --glow-success: 142 60% 34% / 0.1;
