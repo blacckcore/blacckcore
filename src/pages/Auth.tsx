@@ -92,20 +92,26 @@ export default function Auth() {
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
         <div className="relative z-10 text-center space-y-6 max-w-sm">
-          <div className="w-14 h-14 rounded-2xl gradient-silver mx-auto flex items-center justify-center shadow-[0_4px_32px_hsl(var(--glow-silver-strong))]">
-            <span className="text-xl font-bold text-primary-foreground font-display">P</span>
+          <div
+            className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+              boxShadow: '0 0 32px hsl(var(--brand-glow))',
+            }}
+          >
+            <span className="text-xl font-bold text-black font-display">B</span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold font-display text-gradient-silver mb-3 tracking-tight">
-              Painel de Controle — Gestão Pessoal
+            <h1 className="text-3xl font-bold font-display text-foreground mb-3 tracking-tight">
+              BlacckCore
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Controle suas finanças e hábitos com precisão. Uma plataforma premium para quem leva a sério o próprio crescimento.
+              Seu centro de comando pessoal. Organize dinheiro, hábitos e metas com inteligência.
             </p>
           </div>
           {/* Feature chips */}
           <div className="flex flex-wrap gap-2 justify-center">
-            {['Finanças', 'Hábitos', 'Metas', 'Análises'].map((f) => (
+            {['Finanças', 'Hábitos', 'Metas', 'Insights'].map((f) => (
               <span key={f} className="text-xs px-3 py-1.5 rounded-full bg-secondary border border-border/60 text-muted-foreground font-medium">
                 {f}
               </span>
@@ -127,21 +133,29 @@ export default function Auth() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden text-center space-y-2">
-            <div className="w-11 h-11 rounded-xl gradient-silver mx-auto flex items-center justify-center shadow-[0_2px_20px_hsl(var(--glow-silver))]">
-              <span className="text-base font-bold text-primary-foreground font-display">P</span>
+            <div
+              className="w-11 h-11 rounded-xl mx-auto flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+                boxShadow: '0 0 20px hsl(var(--brand-glow))',
+              }}
+            >
+              <span className="text-base font-bold text-black font-display">B</span>
             </div>
-            <h1 className="text-2xl font-bold font-display text-gradient-silver tracking-tight">
-              Painel de Controle — Gestão Pessoal
+            <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">
+              BlacckCore
             </h1>
           </div>
 
           {/* Form header */}
           <div>
             <h2 className="text-xl font-semibold font-display text-foreground tracking-tight">
-              {isLogin ? 'Bem-vindo de volta' : 'Criar sua conta'}
+              {isLogin ? 'Entre no seu centro de comando' : 'Crie seu BlacckCore'}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? 'Entre para acessar seu painel' : 'Comece sua jornada hoje'}
+              {isLogin
+                ? 'Organize dinheiro, hábitos e metas com inteligência.'
+                : 'Comece a tomar o controle em menos de um minuto.'}
             </p>
           </div>
 
@@ -214,11 +228,16 @@ export default function Auth() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 gradient-silver text-primary-foreground font-semibold text-sm gap-2 hover:opacity-90 transition-opacity mt-2"
+              className="w-full h-11 font-semibold text-sm gap-2 hover:opacity-90 transition-opacity mt-2"
+              style={{
+                background: 'hsl(var(--brand))',
+                color: 'hsl(var(--brand-foreground))',
+                boxShadow: '0 0 24px hsl(var(--brand-glow))',
+              }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                   Aguarde...
                 </span>
               ) : (
