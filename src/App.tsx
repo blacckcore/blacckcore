@@ -3,10 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { AppLayout } from "@/components/AppLayout";
+import Landing from "./pages/Landing";
+import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Expenses from "./pages/Expenses";
@@ -20,20 +23,24 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoutes() {
-  const { user, loading } = useAuth();
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="h-8 w-8 border-2 border-silver border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+function AuthedApp() {
+  const { needsOnboarding, isLoading } = useUserPreferences();
+  const location = useLocation();
 
   useNotifications();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="h-8 w-8 border-2 border-silver border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (isLoading) return <LoadingScreen />;
+  if (needsOnboarding && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
-
-  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <AppLayout>
@@ -52,6 +59,27 @@ function ProtectedRoutes() {
   );
 }
 
+function RootGate() {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Landing />;
+  return <AuthedApp />;
+}
+
+function ProtectedShell() {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <AuthedApp />;
+}
+
+function OnboardingRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <Onboarding />;
+}
+
 function AuthRoute() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -62,7 +90,7 @@ function AuthRoute() {
 const App = () => (
   <ThemeProvider
     attribute="class"
-    defaultTheme="system"
+    defaultTheme="dark"
     enableSystem
     disableTransitionOnChange={false}
     storageKey="painel-theme"
@@ -75,7 +103,9 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/*" element={<ProtectedRoutes />} />
+              <Route path="/onboarding" element={<OnboardingRoute />} />
+              <Route path="/" element={<RootGate />} />
+              <Route path="/*" element={<ProtectedShell />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

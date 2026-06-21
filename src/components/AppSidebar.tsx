@@ -51,13 +51,19 @@ export function AppSidebar() {
       >
         {/* Logo */}
         <div className="px-5 py-5 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl gradient-silver flex items-center justify-center shrink-0 shadow-[0_2px_12px_hsl(var(--glow-silver-strong))]">
-            <span className="text-xs font-bold text-primary-foreground">P</span>
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+              boxShadow: '0 0 20px hsl(var(--brand-glow))',
+            }}
+          >
+            <span className="text-xs font-bold text-black font-display">B</span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold font-display text-gradient-silver truncate tracking-tight">
-                Painel de Controle
+              <h2 className="text-sm font-semibold font-display text-foreground truncate tracking-tight">
+                BlacckCore
               </h2>
               <PremiumBadge />
             </div>
