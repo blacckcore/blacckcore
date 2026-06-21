@@ -59,7 +59,7 @@ deploy do whatsapp-webhook publico
 Depois do deploy, use esta URL no painel da Meta:
 
 ```text
-https://tguyjmkvwzfywuqbxmtn.supabase.co/functions/v1/whatsapp-webhook
+https://vpaewrtqszfcycnniggv.supabase.co/functions/v1/whatsapp-webhook
 ```
 
 Eventos para assinar:
