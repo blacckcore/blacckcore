@@ -9,6 +9,8 @@ export function useIncome() {
   const query = useQuery({
     queryKey: ['income', user?.id],
     enabled: !!user,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('income')

@@ -9,6 +9,8 @@ export function useHabits() {
   const habitsQuery = useQuery({
     queryKey: ['habits', user?.id],
     enabled: !!user,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const { data, error } = await supabase.from('habits').select('*').order('created_at');
       if (error) throw error;
@@ -19,6 +21,8 @@ export function useHabits() {
   const completionsQuery = useQuery({
     queryKey: ['habit_completions', user?.id],
     enabled: !!user,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

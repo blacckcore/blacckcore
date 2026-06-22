@@ -9,6 +9,8 @@ export function useSavings() {
   const query = useQuery({
     queryKey: ['savings', user?.id],
     enabled: !!user,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const { data, error } = await supabase.from('savings').select('*').eq('user_id', user!.id).maybeSingle();
       if (error) throw error;

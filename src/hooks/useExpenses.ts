@@ -12,6 +12,8 @@ export function useExpenses(month?: number, year?: number) {
   const query = useQuery({
     queryKey: ['expenses', user?.id, m, y],
     enabled: !!user,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
       const endDate = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;

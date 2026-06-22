@@ -1,5 +1,5 @@
 import { getFriendlyErrorMessage } from '@/lib/errors';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Download, AlertTriangle, Bell, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [connectedWhatsapp, setConnectedWhatsapp] = useState('');
 
   const normalizePhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '');
@@ -61,6 +62,7 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setWhatsappPhone(phone);
+      setConnectedWhatsapp(phone);
       toast({
         title: 'WhatsApp conectado',
         description: 'Agora mensagens desse número podem entrar no BlacckCore.',
@@ -76,6 +78,25 @@ export default function SettingsPage() {
       setSavingWhatsapp(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+
+    supabase
+      .from('whatsapp_connections')
+      .select('phone_e164')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.phone_e164) {
+          setWhatsappPhone(data.phone_e164);
+          setConnectedWhatsapp(data.phone_e164);
+        }
+      });
+  }, [user]);
 
   const handleExport = async () => {
     try {
@@ -177,14 +198,22 @@ export default function SettingsPage() {
             className="bg-secondary border-border"
           />
           <Button onClick={handleSaveWhatsapp} disabled={savingWhatsapp}>
-            {savingWhatsapp ? 'Salvando...' : 'Conectar'}
+            {savingWhatsapp ? 'Salvando...' : connectedWhatsapp === normalizePhone(whatsappPhone) ? 'Conectado' : 'Conectar'}
           </Button>
         </div>
+
+        {connectedWhatsapp && (
+          <p className="text-xs text-muted-foreground">
+            Conectado em {connectedWhatsapp}. Novas mensagens entram automaticamente, sem reconectar.
+          </p>
+        )}
 
         <div className="rounded-xl border border-border/70 bg-secondary/35 p-4 text-xs text-muted-foreground space-y-1">
           <p className="font-medium text-foreground">Exemplos de mensagem:</p>
           <p>gastei 25 mercado</p>
-          <p>recebi 500 cliente</p>
+          <p>paguei 300 aluguel</p>
+          <p>vou receber 500 dia 20/07/2026</p>
+          <p>guardei 100</p>
           <p>completei treino</p>
         </div>
       </motion.div>
