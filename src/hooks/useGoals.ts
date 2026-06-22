@@ -79,6 +79,15 @@ export function useGoals() {
     Promise.all([fetchGoalTypes(), fetchGoals()]).finally(() => setLoading(false));
   }, [user, fetchGoalTypes, fetchGoals]);
 
+  useEffect(() => {
+    if (!user) return;
+    const interval = window.setInterval(() => {
+      fetchGoals();
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [user, fetchGoals]);
+
   const addGoal = async (goal: Partial<Goal>) => {
     if (!user) return;
     const { error } = await supabase.from('goals').insert({ ...goal, user_id: user.id } as any);

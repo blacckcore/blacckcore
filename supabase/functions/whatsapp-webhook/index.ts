@@ -4,8 +4,9 @@ type ParsedAction =
   | { type: "expense"; amount: number; name: string; status: "paid" | "pending"; date: string }
   | { type: "income"; amount: number; source: string; status: "received" | "pending"; date: string }
   | { type: "savings"; amount: number }
-  | { type: "habit"; name: string; complete: boolean }
+  | { type: "habit"; name: string; complete: boolean; amount?: number; goalTitle?: string }
   | { type: "goal"; title: string; endDate: string | null; targetValue: number; progressType: "count" | "monetary" | "percentage" }
+  | { type: "progress"; title: string; amount: number }
   | { type: "unknown"; reason: string };
 
 const corsHeaders = {
@@ -65,13 +66,54 @@ function parseDate(text: string) {
   return today();
 }
 
-function cleanupLabel(text: string) {
-  return text
-    .replace(/\b(?:hoje|amanha|dia|em|no|na|para|pra|com|de|do|da|dos|das|o|a|os|as|um|uma|uns|umas|reais|real|r\$)\b/gi, " ")
+const numberWords: Record<string, number> = {
+  um: 1,
+  uma: 1,
+  dois: 2,
+  duas: 2,
+  tres: 3,
+  quatro: 4,
+  cinco: 5,
+  seis: 6,
+  sete: 7,
+  oito: 8,
+  nove: 9,
+  dez: 10,
+};
+
+function extractCount(text: string) {
+  const numeric = text.match(/\b(\d+(?:[\.,]\d{1,2})?)\b/);
+  if (numeric) return parseMoney(numeric[1]);
+
+  for (const [word, value] of Object.entries(numberWords)) {
+    if (new RegExp(`\\b${word}\\b`, "i").test(text)) return value;
+  }
+
+  return 0;
+}
+
+function cleanupLabel(text: string, options: { keepNumbers?: boolean } = {}) {
+  let result = text
+    .replace(/\b(?:hoje|amanha|dia|em|no|na|para|pra|com|de|do|da|dos|das|o|a|os|as|reais|real|r\$)\b/gi, " ")
     .replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g, " ")
-    .replace(/\b\d+(?:[\.,]\d{1,2})?\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\s+/g, " ");
+
+  if (!options.keepNumbers) {
+    result = result
+      .replace(/\b\d+(?:[\.,]\d{1,2})?\b/g, " ")
+      .replace(/\b(?:um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/gi, " ");
+  }
+
+  return result.replace(/\s+/g, " ").trim();
+}
+
+function normalizeKey(value: string) {
+  return normalizeText(value)
+    .replace(/\b(?:um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\b/g, " ")
+    .split(" ")
+    .map((part) => part.replace(/s$/i, ""))
+    .filter(Boolean)
+    .join(" ");
 }
 
 function makeHabitInfinitive(text: string) {
@@ -86,16 +128,22 @@ function makeHabitInfinitive(text: string) {
     [/^alonguei\b/i, "alongar"],
     [/^acordei\b/i, "acordar"],
     [/^dormi\b/i, "dormir"],
+    [/^vendi\b/i, "vender"],
   ];
 
   let result = text.trim();
+  result = result.replace(/^(terminei|completei|conclui)\s+(de\s+)?/i, "");
   for (const [pattern, replacement] of replacements) {
     if (pattern.test(result)) {
       result = result.replace(pattern, replacement);
       break;
     }
   }
-  return cleanupLabel(result) || text.trim();
+  return cleanupLabel(result, { keepNumbers: true }) || text.trim();
+}
+
+function makeGoalTitle(text: string) {
+  return cleanupLabel(makeHabitInfinitive(text), { keepNumbers: false }) || cleanupLabel(text);
 }
 
 function parseMessage(body: string): ParsedAction {
@@ -129,13 +177,15 @@ function parseMessage(body: string): ParsedAction {
 
   const goalMatch = text.match(/^(?:meta|objetivo)(?:\s+de\s+hoje|\s+para\s+hoje)?\s+(.+)$/i);
   if (goalMatch) {
-    const title = makeHabitInfinitive(goalMatch[1]);
+    const goalText = goalMatch[1];
+    const title = makeGoalTitle(goalText);
     const moneyGoal = amount > 0 && /\b(real|reais|r\$|dinheiro|economizar|guardar|juntar)\b/i.test(text);
+    const countGoal = extractCount(goalText) || 1;
     return {
       type: "goal",
       title,
       endDate: /\bhoje\b/i.test(text) ? today() : null,
-      targetValue: moneyGoal ? amount : 1,
+      targetValue: moneyGoal ? amount : countGoal,
       progressType: moneyGoal ? "monetary" : "count",
     };
   }
@@ -147,7 +197,18 @@ function parseMessage(body: string): ParsedAction {
 
   const habitComplete = text.match(/^(?:completei|conclui|fiz|terminei|li|caminhei|corri|bebi|treinei|estudei|meditei|alonguei|acordei|dormi)\s+(.+)$/i);
   if (habitComplete) {
-    return { type: "habit", name: makeHabitInfinitive(original), complete: true };
+    return {
+      type: "habit",
+      name: makeHabitInfinitive(original),
+      complete: true,
+      amount: extractCount(text) || 1,
+      goalTitle: makeGoalTitle(original),
+    };
+  }
+
+  const progressComplete = text.match(/^(?:vendi|vendeu|vendemos|bati|alcancei|terminei|completei|conclui)\s+(.+)$/i);
+  if (progressComplete) {
+    return { type: "progress", title: makeGoalTitle(original), amount: extractCount(text) || 1 };
   }
 
   return { type: "unknown", reason: "Formato nao reconhecido" };
@@ -172,7 +233,21 @@ async function reply(phoneNumberId: string, to: string, text: string) {
 }
 
 async function ensureHabit(userId: string, name: string) {
-  const { data: existingHabit, error: findError } = await supabase
+  const { data: habits, error: listError } = await supabase
+    .from("habits")
+    .select("id,name")
+    .eq("user_id", userId);
+  if (listError) throw listError;
+
+  const wantedKey = normalizeKey(name);
+  const existingHabit = (habits ?? []).find((habit) => {
+    const habitKey = normalizeKey(habit.name);
+    return habitKey === wantedKey || habitKey.includes(wantedKey) || wantedKey.includes(habitKey);
+  });
+
+  if (existingHabit?.id) return existingHabit;
+
+  const { data: existingByName, error: findError } = await supabase
     .from("habits")
     .select("id,name")
     .eq("user_id", userId)
@@ -180,7 +255,7 @@ async function ensureHabit(userId: string, name: string) {
     .maybeSingle();
   if (findError) throw findError;
 
-  if (existingHabit?.id) return existingHabit;
+  if (existingByName?.id) return existingByName;
 
   const { data: createdHabit, error: createError } = await supabase
     .from("habits")
@@ -189,6 +264,37 @@ async function ensureHabit(userId: string, name: string) {
     .single();
   if (createError) throw createError;
   return createdHabit;
+}
+
+async function updateMatchingGoals(userId: string, title: string, amount: number) {
+  const { data: goals, error: findError } = await supabase
+    .from("goals")
+    .select("id,title,current_value,target_value,status")
+    .eq("user_id", userId)
+    .eq("status", "in_progress");
+  if (findError) throw findError;
+
+  const wantedKey = normalizeKey(title);
+  const goal = (goals ?? []).find((item) => {
+    const goalKey = normalizeKey(item.title);
+    return goalKey === wantedKey || goalKey.includes(wantedKey) || wantedKey.includes(goalKey);
+  });
+
+  if (!goal) return null;
+
+  const current = Number(goal.current_value ?? 0);
+  const target = Number(goal.target_value ?? 1);
+  const next = Math.min(target, current + amount);
+  const status = next >= target ? "completed" : "in_progress";
+
+  const { error } = await supabase
+    .from("goals")
+    .update({ current_value: next, status })
+    .eq("id", goal.id)
+    .eq("user_id", userId);
+  if (error) throw error;
+
+  return { title: goal.title, current: next, target, completed: status === "completed" };
 }
 
 async function applyAction(userId: string, action: ParsedAction) {
@@ -262,6 +368,13 @@ async function applyAction(userId: string, action: ParsedAction) {
       }, { onConflict: "habit_id,completed_date" });
     if (error) throw error;
 
+    const goalProgress = await updateMatchingGoals(userId, action.goalTitle ?? action.name, action.amount ?? 1);
+    if (goalProgress) {
+      return goalProgress.completed
+        ? `Habito concluido e meta finalizada: ${goalProgress.title}`
+        : `Habito concluido: ${habit.name}. Meta atualizada: ${goalProgress.current}/${goalProgress.target}`;
+    }
+
     return `Habito concluido hoje: ${habit.name}`;
   }
 
@@ -281,6 +394,17 @@ async function applyAction(userId: string, action: ParsedAction) {
     return action.endDate === today()
       ? `Meta de hoje criada: ${action.title}`
       : `Meta criada: ${action.title}`;
+  }
+
+  if (action.type === "progress") {
+    const goalProgress = await updateMatchingGoals(userId, action.title, action.amount);
+    if (!goalProgress) {
+      return `Nao achei uma meta parecida com "${action.title}". Crie antes assim: "meta de hoje ${action.title}".`;
+    }
+
+    return goalProgress.completed
+      ? `Meta finalizada: ${goalProgress.title}`
+      : `Meta atualizada: ${goalProgress.title} (${goalProgress.current}/${goalProgress.target})`;
   }
 
   return "Nao entendi ainda. Tente assim: 'gastei 25 mercado', 'paguei 300 aluguel', 'vou receber 500 dia 20/07', 'guardei 100', 'novo habito caminhar 500 metros', 'li uma pagina do livro hoje' ou 'meta de hoje ler uma pagina'.";
