@@ -5,6 +5,7 @@ import { Trash2, Plus, Download, AlertTriangle, Bell, MessageCircle } from 'luci
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -182,10 +183,19 @@ export default function SettingsPage() {
           >
             <MessageCircle className="h-4 w-4" style={{ color: 'hsl(var(--brand))' }} />
           </div>
-          <div>
-            <h2 className="text-lg font-semibold font-display">WhatsApp inteligente</h2>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-semibold font-display">WhatsApp inteligente</h2>
+              {connectedWhatsapp && (
+                <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                  Ativo
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
-              Conecte seu número para lançar gastos, receitas e hábitos direto pelo WhatsApp.
+              {connectedWhatsapp
+                ? 'Mensagens desse numero entram automaticamente no BlacckCore.'
+                : 'Conecte seu número para lançar gastos, receitas e hábitos direto pelo WhatsApp.'}
             </p>
           </div>
         </div>
@@ -197,15 +207,19 @@ export default function SettingsPage() {
             onChange={e => setWhatsappPhone(e.target.value)}
             className="bg-secondary border-border"
           />
-          <Button onClick={handleSaveWhatsapp} disabled={savingWhatsapp}>
-            {savingWhatsapp ? 'Salvando...' : connectedWhatsapp === normalizePhone(whatsappPhone) ? 'Conectado' : 'Conectar'}
+          <Button
+            onClick={handleSaveWhatsapp}
+            disabled={savingWhatsapp}
+            variant={connectedWhatsapp === normalizePhone(whatsappPhone) ? 'outline' : 'default'}
+          >
+            {savingWhatsapp ? 'Salvando...' : connectedWhatsapp === normalizePhone(whatsappPhone) ? 'Trocar numero' : 'Ativar WhatsApp'}
           </Button>
         </div>
 
         {connectedWhatsapp && (
-          <p className="text-xs text-muted-foreground">
-            Conectado em {connectedWhatsapp}. Novas mensagens entram automaticamente, sem reconectar.
-          </p>
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-300">
+            Conexao ativa em {connectedWhatsapp}. Nao precisa reconectar para enviar novas mensagens.
+          </div>
         )}
 
         <div className="rounded-xl border border-border/70 bg-secondary/35 p-4 text-xs text-muted-foreground space-y-1">
