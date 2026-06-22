@@ -19,6 +19,7 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { useSavings } from '@/hooks/useSavings';
 import { useIncome } from '@/hooks/useIncome';
 import { useHabits } from '@/hooks/useHabits';
+import { useNavigate } from 'react-router-dom';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -30,6 +31,7 @@ type DashboardStat = {
 };
 
 const Index = () => {
+  const navigate = useNavigate();
   const { blocks } = useDashboardLayout();
   const { total: totalExpenses } = useExpenses();
   const { savings } = useSavings();
@@ -162,6 +164,8 @@ const Index = () => {
                   icon={data.icon}
                   subtitle={data.subtitle}
                   delay={i * 0.07}
+                  onClick={block.id === 'savings' ? () => navigate('/economia') : undefined}
+                  actionLabel={block.id === 'savings' ? 'Clique para alterar' : undefined}
                 />
               </motion.div>
             );

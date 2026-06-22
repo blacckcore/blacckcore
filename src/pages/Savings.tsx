@@ -198,7 +198,8 @@ export default function Savings() {
       ) : (
         <div className="space-y-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-accent">
                 <PiggyBank className="h-8 w-8 text-silver" />
               </div>
@@ -213,8 +214,15 @@ export default function Savings() {
                   {formatCurrency(saved)}
                 </motion.p>
               </div>
+              </div>
+              <Button onClick={startEdit} className="w-full sm:w-auto gradient-silver text-primary-foreground">
+                <Edit2 className="h-4 w-4 mr-1" /> Alterar dinheiro guardado
+              </Button>
             </div>
             <ProgressBar value={saved} max={goal || 1} label={`Meta: ${formatCurrency(goal)}`} glow={savingsPercent >= 100} />
+            <p className="text-xs text-muted-foreground mt-3">
+              Use o botao acima para ajustar o valor guardado, criar uma meta ou corrigir sua reserva.
+            </p>
             {savings?.goal_date && (
               <p className="text-sm text-muted-foreground mt-3">
                 Prazo: {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString('pt-BR')}

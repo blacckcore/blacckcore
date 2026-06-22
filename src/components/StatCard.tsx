@@ -10,16 +10,28 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
   delay?: number;
   expandedContent?: React.ReactNode;
+  onClick?: () => void;
+  actionLabel?: string;
 }
 
-export function StatCard({ title, value, icon: Icon, subtitle, delay = 0, expandedContent }: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, subtitle, delay = 0, expandedContent, onClick, actionLabel }: StatCardProps) {
   return (
     <motion.div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -3, transition: { duration: 0.25, ease: 'easeOut' } }}
-      className="glass-card card-highlight p-6 group cursor-default"
+      className={`glass-card card-highlight p-6 group ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-silver/30' : 'cursor-default'}`}
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -47,6 +59,12 @@ export function StatCard({ title, value, icon: Icon, subtitle, delay = 0, expand
         >
           {subtitle}
         </motion.p>
+      )}
+
+      {actionLabel && (
+        <p className="mt-3 text-xs font-medium text-foreground/80 group-hover:text-foreground">
+          {actionLabel}
+        </p>
       )}
 
       {/* Expanded content */}
