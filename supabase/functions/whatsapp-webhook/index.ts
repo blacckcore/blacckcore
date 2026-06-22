@@ -1,8 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.96.0";
 
 type ParsedAction =
-  | { type: "expense"; amount: number; name: string }
-  | { type: "income"; amount: number; source: string }
+  | { type: "expense"; amount: number; name: string; status: "paid" | "pending"; date: string }
+  | { type: "income"; amount: number; source: string; status: "received" | "pending"; date: string }
+  | { type: "savings"; amount: number }
   | { type: "habit"; name: string }
   | { type: "unknown"; reason: string };
 
@@ -30,40 +31,73 @@ function parseMoney(value: string) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parseDate(text: string) {
+  const explicit = text.match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/);
+  if (explicit) {
+    const day = explicit[1].padStart(2, "0");
+    const month = explicit[2].padStart(2, "0");
+    const currentYear = new Date().getFullYear();
+    const rawYear = explicit[3];
+    const year = rawYear ? (rawYear.length === 2 ? `20${rawYear}` : rawYear) : String(currentYear);
+    return `${year}-${month}-${day}`;
+  }
+
+  if (/\b(amanha|amanhã)\b/i.test(text)) {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().slice(0, 10);
+  }
+
+  return today();
+}
+
+function cleanupLabel(text: string) {
+  return text
+    .replace(/\b(?:dia|em|no|na|para|pra|com|de|do|da|o|a|um|uma)\b/gi, " ")
+    .replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function parseMessage(body: string): ParsedAction {
-  const text = body.trim().toLowerCase();
-  const amountPattern = "(\\d+(?:[\\.,]\\d{1,2})?)";
+  const original = body.trim();
+  const text = original.toLowerCase();
+  const amountMatch = text.match(/\b(\d+(?:[\.,]\d{1,2})?)\b/);
+  const amount = amountMatch ? parseMoney(amountMatch[1]) : 0;
+  const date = parseDate(text);
 
-  const expense = text.match(new RegExp(`^(?:gastei|paguei|despesa|comprei)\\s+${amountPattern}\\s*(?:em|no|na|com)?\\s*(.+)?$`, "i"));
-  if (expense) {
-    return {
-      type: "expense",
-      amount: parseMoney(expense[1]),
-      name: expense[2]?.trim() || "Despesa via WhatsApp",
-    };
+  if (/\b(guardei|poupei|economizei|reserva|reservei|guardar)\b/i.test(text) && amount > 0) {
+    return { type: "savings", amount };
   }
 
-  const income = text.match(new RegExp(`^(?:recebi|receita|ganhei|entrada)\\s+${amountPattern}\\s*(?:de|do|da|com)?\\s*(.+)?$`, "i"));
-  if (income) {
-    return {
-      type: "income",
-      amount: parseMoney(income[1]),
-      source: income[2]?.trim() || "Receita via WhatsApp",
-    };
+  if (/\b(gastei|paguei|despesa|comprei|compra|debito|boleto|pix|cartao|cartão|pendente|devo|vou pagar)\b/i.test(text) && amount > 0) {
+    const status = /\b(paguei|pago|quitei|quitado)\b/i.test(text) ? "paid" : "pending";
+    const withoutAmount = text.replace(amountMatch?.[0] ?? "", "");
+    const withoutCommand = withoutAmount.replace(/\b(gastei|paguei|despesa|comprei|compra|debito|boleto|pix|cartao|cartão|pendente|devo|vou pagar|pago|quitado)\b/gi, "");
+    const name = cleanupLabel(withoutCommand) || "Despesa via WhatsApp";
+
+    return { type: "expense", amount, name, status, date };
   }
 
-  const habit = text.match(/^(?:completei|fiz|habito|hábito)\s+(.+)$/i);
+  if (/\b(recebi|receita|ganhei|entrada|vou receber|a receber|cliente|salario|salário)\b/i.test(text) && amount > 0) {
+    const status = /\b(recebi|recebido|caiu|entrou)\b/i.test(text) ? "received" : "pending";
+    const withoutAmount = text.replace(amountMatch?.[0] ?? "", "");
+    const withoutCommand = withoutAmount.replace(/\b(recebi|receita|ganhei|entrada|vou receber|a receber|recebido|caiu|entrou)\b/gi, "");
+    const source = cleanupLabel(withoutCommand) || "Receita via WhatsApp";
+
+    return { type: "income", amount, source, status, date };
+  }
+
+  const habit = original.match(/^(?:completei|fiz|habito|hábito)\s+(.+)$/i);
   if (habit) {
-    return {
-      type: "habit",
-      name: habit[1].trim(),
-    };
+    return { type: "habit", name: habit[1].trim() };
   }
 
-  return {
-    type: "unknown",
-    reason: "Formato não reconhecido",
-  };
+  return { type: "unknown", reason: "Formato nao reconhecido" };
 }
 
 async function reply(phoneNumberId: string, to: string, text: string) {
@@ -90,11 +124,12 @@ async function applyAction(userId: string, action: ParsedAction) {
       user_id: userId,
       name: action.name,
       amount: action.amount,
-      status: "paid",
-      date: new Date().toISOString().slice(0, 10),
+      status: action.status,
+      date: action.date,
     });
     if (error) throw error;
-    return `Despesa salva: R$ ${action.amount.toFixed(2)} - ${action.name}`;
+
+    return `Despesa salva como ${action.status === "paid" ? "paga" : "pendente"}: R$ ${action.amount.toFixed(2)} - ${action.name}`;
   }
 
   if (action.type === "income") {
@@ -102,11 +137,40 @@ async function applyAction(userId: string, action: ParsedAction) {
       user_id: userId,
       source: action.source,
       amount: action.amount,
-      status: "received",
-      expected_date: new Date().toISOString().slice(0, 10),
+      status: action.status,
+      expected_date: action.date,
     });
     if (error) throw error;
-    return `Receita salva: R$ ${action.amount.toFixed(2)} - ${action.source}`;
+
+    return `Receita salva como ${action.status === "received" ? "recebida" : "pendente"}: R$ ${action.amount.toFixed(2)} - ${action.source}`;
+  }
+
+  if (action.type === "savings") {
+    const { data: current, error: findError } = await supabase
+      .from("savings")
+      .select("total_saved,goal_amount,goal_date")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (findError) throw findError;
+
+    const nextTotal = Number(current?.total_saved ?? 0) + action.amount;
+    const { error } = await supabase.from("savings").upsert({
+      user_id: userId,
+      total_saved: nextTotal,
+      goal_amount: Number(current?.goal_amount ?? 0),
+      goal_date: current?.goal_date ?? null,
+    });
+    if (error) throw error;
+
+    const now = new Date();
+    await supabase.from("savings_history").insert({
+      user_id: userId,
+      amount: action.amount,
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+    });
+
+    return `Economia salva: R$ ${action.amount.toFixed(2)}. Total guardado: R$ ${nextTotal.toFixed(2)}`;
   }
 
   if (action.type === "habit") {
@@ -134,13 +198,14 @@ async function applyAction(userId: string, action: ParsedAction) {
       .upsert({
         user_id: userId,
         habit_id: habitId,
-        completed_date: new Date().toISOString().slice(0, 10),
+        completed_date: today(),
       }, { onConflict: "habit_id,completed_date" });
     if (error) throw error;
-    return `Hábito marcado como concluído: ${action.name}`;
+
+    return `Habito marcado como concluido: ${action.name}`;
   }
 
-  return "Não entendi ainda. Tente: 'gastei 25 mercado', 'recebi 500 cliente' ou 'completei treino'.";
+  return "Nao entendi ainda. Tente: 'gastei 25 mercado', 'paguei 300 aluguel', 'vou receber 500 dia 20/07', 'guardei 100' ou 'completei treino'.";
 }
 
 Deno.serve(async (req) => {
@@ -204,7 +269,7 @@ Deno.serve(async (req) => {
           await reply(
             phoneNumberId,
             fromRaw,
-            "Esse número ainda não está conectado ao BlacckCore. Cadastre seu WhatsApp nas configurações do app.",
+            "Esse numero ainda nao esta conectado ao BlacckCore. Cadastre seu WhatsApp nas configuracoes do app.",
           );
           continue;
         }
@@ -214,7 +279,7 @@ Deno.serve(async (req) => {
           await reply(phoneNumberId, fromRaw, result);
         } catch (error) {
           console.error(error);
-          await reply(phoneNumberId, fromRaw, "Não consegui salvar agora. Tente novamente em alguns minutos.");
+          await reply(phoneNumberId, fromRaw, "Nao consegui salvar agora. Tente novamente em alguns minutos.");
         }
       }
     }
