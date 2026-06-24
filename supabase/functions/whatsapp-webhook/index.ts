@@ -458,9 +458,15 @@ function parseMessage(body: string): ParsedAction {
 }
 
 async function reply(phoneNumberId: string, to: string, text: string) {
-  if (!whatsappToken || !phoneNumberId) return;
+  if (!whatsappToken) {
+    return { ok: false, status: 0, error: "missing_whatsapp_access_token" };
+  }
 
-  await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
+  if (!phoneNumberId) {
+    return { ok: false, status: 0, error: "missing_phone_number_id" };
+  }
+
+  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${whatsappToken}`,
@@ -473,6 +479,14 @@ async function reply(phoneNumberId: string, to: string, text: string) {
       text: { body: text },
     }),
   });
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    console.error("whatsapp_reply_failed", response.status, responseText);
+    return { ok: false, status: response.status, error: responseText };
+  }
+
+  return { ok: true, status: response.status, error: null };
 }
 
 async function ensureHabit(userId: string, name: string) {
@@ -975,11 +989,23 @@ Deno.serve(async (req) => {
             status: "unlinked_phone",
           });
 
-          await reply(
+          const responseText =
+            "Esse numero ainda nao esta conectado ao BlacckCore. Cadastre seu WhatsApp nas configuracoes do app.";
+          const replyResult = await reply(
             phoneNumberId,
             fromRaw,
-            "Esse numero ainda nao esta conectado ao BlacckCore. Cadastre seu WhatsApp nas configuracoes do app.",
+            responseText,
           );
+          await supabase.from("whatsapp_messages").insert({
+            connection_id: null,
+            user_id: null,
+            provider_message_id: null,
+            direction: "outbound",
+            body: responseText,
+            parsed_action: action,
+            raw_payload: replyResult,
+            status: replyResult.ok ? "sent" : "reply_failed",
+          });
           continue;
         }
 
@@ -995,9 +1021,20 @@ Deno.serve(async (req) => {
             raw_payload: message,
             status: "received",
           });
-          await reply(phoneNumberId, fromRaw, result.response);
+          const replyResult = await reply(phoneNumberId, fromRaw, result.response);
+          await supabase.from("whatsapp_messages").insert({
+            connection_id: connection.id,
+            user_id: connection.user_id,
+            provider_message_id: null,
+            direction: "outbound",
+            body: result.response,
+            parsed_action: result.action,
+            raw_payload: replyResult,
+            status: replyResult.ok ? "sent" : "reply_failed",
+          });
         } catch (error) {
           console.error(error);
+          const errorResponse = "Nao consegui salvar agora. Tente novamente em alguns minutos.";
           await supabase.from("whatsapp_messages").insert({
             connection_id: connection.id,
             user_id: connection.user_id,
@@ -1008,7 +1045,17 @@ Deno.serve(async (req) => {
             raw_payload: message,
             status: "error",
           });
-          await reply(phoneNumberId, fromRaw, "Nao consegui salvar agora. Tente novamente em alguns minutos.");
+          const replyResult = await reply(phoneNumberId, fromRaw, errorResponse);
+          await supabase.from("whatsapp_messages").insert({
+            connection_id: connection.id,
+            user_id: connection.user_id,
+            provider_message_id: null,
+            direction: "outbound",
+            body: errorResponse,
+            parsed_action: null,
+            raw_payload: replyResult,
+            status: replyResult.ok ? "sent" : "reply_failed",
+          });
         }
       }
     }
