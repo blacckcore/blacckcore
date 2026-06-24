@@ -9,6 +9,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
+import { localDateString } from '@/lib/dates';
 
 export default function Habits() {
   const { habits, completions, addHabit, deleteHabit, toggleCompletion, getStreak } = useHabits();
@@ -16,7 +17,7 @@ export default function Habits() {
   const { features } = useSubscription();
   const [newHabit, setNewHabit] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
 
   const handleAdd = async () => {
     if (!newHabit.trim()) return;
@@ -51,7 +52,7 @@ export default function Habits() {
   const last30 = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split('T')[0];
+    return localDateString(d);
   });
 
   return (

@@ -42,13 +42,27 @@ function parseMoney(value: string) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateString(new Date());
+}
+
+function localDateString(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return `${year}-${month}-${day}`;
 }
 
 function tomorrow() {
   const date = new Date();
   date.setDate(date.getDate() + 1);
-  return date.toISOString().slice(0, 10);
+  return localDateString(date);
 }
 
 function parseDate(text: string) {
@@ -197,6 +211,17 @@ function parseMessage(body: string): ParsedAction {
 
   const habitComplete = text.match(/^(?:completei|conclui|fiz|terminei|li|caminhei|corri|bebi|treinei|estudei|meditei|alonguei|acordei|dormi)\s+(.+)$/i);
   if (habitComplete) {
+    return {
+      type: "habit",
+      name: makeHabitInfinitive(original),
+      complete: true,
+      amount: extractCount(text) || 1,
+      goalTitle: makeGoalTitle(original),
+    };
+  }
+
+  const directHabit = text.match(/^(?:beber|ler|caminhar|correr|treinar|estudar|meditar|alongar|dormir|acordar)\s+(.+)$/i);
+  if (directHabit) {
     return {
       type: "habit",
       name: makeHabitInfinitive(original),

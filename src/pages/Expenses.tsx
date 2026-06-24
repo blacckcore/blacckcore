@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { localDateString } from '@/lib/dates';
 
 const ICON_COMPONENTS: Record<string, any> = { UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle, Receipt };
 
@@ -35,7 +36,7 @@ export default function Expenses() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [form, setForm] = useState({ name: '', expense_type_id: '', amount: '', date: new Date().toISOString().split('T')[0], status: 'pending' });
+  const [form, setForm] = useState({ name: '', expense_type_id: '', amount: '', date: localDateString(), status: 'pending' });
   const [newType, setNewType] = useState({ name: '', color: EXPENSE_COLORS[0], icon: 'CreditCard' });
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function Expenses() {
       } else {
         await addExpense.mutateAsync(payload);
       }
-      setForm({ name: '', expense_type_id: '', amount: '', date: new Date().toISOString().split('T')[0], status: 'pending' });
+      setForm({ name: '', expense_type_id: '', amount: '', date: localDateString(), status: 'pending' });
       setOpen(false);
     } catch (e: any) {
       console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });

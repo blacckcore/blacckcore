@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
+import { localDateString } from '@/lib/dates';
 
 const STORAGE_KEY = 'habit-reminders-enabled';
 const PERMISSION_ASKED_KEY = 'notification-permission-asked';
@@ -57,7 +58,7 @@ function trackClicked() {
 }
 
 async function getIncompleteCount(userId: string): Promise<{ total: number; incomplete: number }> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
 
   const [{ data: habits }, { data: completions }] = await Promise.all([
     supabase.from('habits').select('id'),

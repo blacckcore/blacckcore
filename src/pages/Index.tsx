@@ -20,6 +20,7 @@ import { useSavings } from '@/hooks/useSavings';
 import { useIncome } from '@/hooks/useIncome';
 import { useHabits } from '@/hooks/useHabits';
 import { useNavigate } from 'react-router-dom';
+import { localDateString } from '@/lib/dates';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -38,7 +39,7 @@ const Index = () => {
   const { totalPending, totalReceived } = useIncome();
   const { habits, completions } = useHabits();
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
   const completedToday = habits.filter(h =>
     completions.some(c => c.habit_id === h.id && c.completed_date === today)
   ).length;

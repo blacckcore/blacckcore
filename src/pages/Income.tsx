@@ -10,6 +10,7 @@ import { useIncome } from '@/hooks/useIncome';
 import { useIncomeTypes, INCOME_COLORS, INCOME_ICONS } from '@/hooks/useIncomeTypes';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { localDateString } from '@/lib/dates';
 
 const ICON_COMPONENTS: Record<string, any> = { DollarSign, Briefcase, Laptop, TrendingUp, Coins, CreditCard, Banknote, Gem };
 
@@ -24,7 +25,7 @@ export default function Income() {
   const [typeOpen, setTypeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
-  const [form, setForm] = useState({ source: '', amount: '', expected_date: new Date().toISOString().split('T')[0], status: 'pending', income_type_id: '' });
+  const [form, setForm] = useState({ source: '', amount: '', expected_date: localDateString(), status: 'pending', income_type_id: '' });
   const [newType, setNewType] = useState({ name: '', color: INCOME_COLORS[0], icon: 'DollarSign' });
 
   // Seed defaults if no types exist
@@ -50,7 +51,7 @@ export default function Income() {
       } else {
         await addIncome.mutateAsync(payload);
       }
-      setForm({ source: '', amount: '', expected_date: new Date().toISOString().split('T')[0], status: 'pending', income_type_id: '' });
+      setForm({ source: '', amount: '', expected_date: localDateString(), status: 'pending', income_type_id: '' });
       setOpen(false);
     } catch (e: any) {
       console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });

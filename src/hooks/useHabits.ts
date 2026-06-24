@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
+import { localDateString } from '@/lib/dates';
 
 export function useHabits() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export function useHabits() {
       const { data, error } = await supabase
         .from('habit_completions')
         .select('*')
-        .gte('completed_date', thirtyDaysAgo.toISOString().split('T')[0]);
+        .gte('completed_date', localDateString(thirtyDaysAgo));
       if (error) throw error;
       return data;
     },
@@ -84,7 +85,7 @@ export function useHabits() {
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = localDateString(d);
       if (completions.includes(dateStr)) {
         streak++;
       } else if (i > 0) {
