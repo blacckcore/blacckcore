@@ -130,6 +130,16 @@ function normalizeKey(value: string) {
     .join(" ");
 }
 
+function stripHabitCommand(text: string) {
+  return normalizeText(text)
+    .replace(/^(minha\s+)?(?:meta|objetivo)(?:\s+(?:de|para|pra)\s+hoje)?\s*(?:e|eh)?\s+/i, "")
+    .replace(/^(?:novo|nova|criar|adicionar|add)\s+(?:habito|rotina)\s+(?:de\s+)?/i, "")
+    .replace(/^(?:quero|preciso|vou)\s+(?:criar|adicionar|fazer|marcar)?\s*(?:o\s+)?(?:habito\s+)?(?:de\s+)?/i, "")
+    .replace(/^(?:marcar|concluir|completar)\s+(?:o\s+)?(?:habito\s+)?(?:de\s+)?/i, "")
+    .replace(/^(?:terminei|completei|conclui|fiz)\s+(?:de\s+)?/i, "")
+    .trim();
+}
+
 function makeHabitInfinitive(text: string) {
   const replacements: Array<[RegExp, string]> = [
     [/^li\b/i, "ler"],
@@ -145,15 +155,14 @@ function makeHabitInfinitive(text: string) {
     [/^vendi\b/i, "vender"],
   ];
 
-  let result = text.trim();
-  result = result.replace(/^(terminei|completei|conclui)\s+(de\s+)?/i, "");
+  let result = stripHabitCommand(text);
   for (const [pattern, replacement] of replacements) {
     if (pattern.test(result)) {
       result = result.replace(pattern, replacement);
       break;
     }
   }
-  return cleanupLabel(result, { keepNumbers: true }) || text.trim();
+  return cleanupLabel(result, { keepNumbers: true }) || normalizeText(text);
 }
 
 function makeGoalTitle(text: string) {
@@ -189,7 +198,7 @@ function parseMessage(body: string): ParsedAction {
     return { type: "income", amount, source, status: received ? "received" : "pending", date };
   }
 
-  const goalMatch = text.match(/^(?:meta|objetivo)(?:\s+de\s+hoje|\s+para\s+hoje)?\s+(.+)$/i);
+  const goalMatch = text.match(/^(?:minha\s+)?(?:meta|objetivo)(?:\s+(?:de|para|pra)\s+hoje)?(?:\s+(?:e|eh))?\s+(.+)$/i);
   if (goalMatch) {
     const goalText = goalMatch[1];
     const title = makeGoalTitle(goalText);
@@ -213,10 +222,10 @@ function parseMessage(body: string): ParsedAction {
   if (habitComplete) {
     return {
       type: "habit",
-      name: makeHabitInfinitive(original),
+      name: makeHabitInfinitive(text),
       complete: true,
       amount: extractCount(text) || 1,
-      goalTitle: makeGoalTitle(original),
+      goalTitle: makeGoalTitle(text),
     };
   }
 
@@ -224,16 +233,16 @@ function parseMessage(body: string): ParsedAction {
   if (directHabit) {
     return {
       type: "habit",
-      name: makeHabitInfinitive(original),
+      name: makeHabitInfinitive(text),
       complete: true,
       amount: extractCount(text) || 1,
-      goalTitle: makeGoalTitle(original),
+      goalTitle: makeGoalTitle(text),
     };
   }
 
   const progressComplete = text.match(/^(?:vendi|vendeu|vendemos|bati|alcancei|terminei|completei|conclui)\s+(.+)$/i);
   if (progressComplete) {
-    return { type: "progress", title: makeGoalTitle(original), amount: extractCount(text) || 1 };
+    return { type: "progress", title: makeGoalTitle(text), amount: extractCount(text) || 1 };
   }
 
   return { type: "unknown", reason: "Formato nao reconhecido" };
