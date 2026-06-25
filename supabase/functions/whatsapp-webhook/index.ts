@@ -8,7 +8,7 @@ type ParsedAction =
   | { type: "debt_payment"; name: string; amount: number | null }
   | { type: "goal_create"; title: string; targetValue: number; endDate: string | null; progressType: "count" | "monetary" | "percentage" }
   | { type: "goal_progress"; title: string; amount: number }
-  | { type: "query"; query: "expenses_today" | "expenses_week" | "savings" | "debts" | "receivables" | "month_summary" | "balance" }
+  | { type: "query"; query: "expenses_today" | "expenses_week" | "savings" | "debts" | "receivables" | "day_summary" | "month_summary" | "balance" }
   | { type: "ambiguous"; question: string }
   | { type: "habit"; name: string; complete: boolean; amount?: number; goalTitle?: string }
   | { type: "goal"; title: string; endDate: string | null; targetValue: number; progressType: "count" | "monetary" | "percentage" }
@@ -329,6 +329,10 @@ function parseMessage(body: string): ParsedAction {
   const amount = money?.amount ?? 0;
   const date = parseDate(text);
 
+  if (/\b(analise|analisar|resumo)\b/i.test(text) && /\b(hoje|dia)\b/i.test(text)) {
+    return { type: "query", query: "day_summary" };
+  }
+
   if (/\b(quanto|qual|quais|resumo|saldo|minhas|meu)\b/i.test(text)) {
     if (/\b(gastei|despesas?)\b/i.test(text) && /\bsemana\b/i.test(text)) return { type: "query", query: "expenses_week" };
     if (/\b(gastei|despesas?)\b/i.test(text)) return { type: "query", query: "expenses_today" };
@@ -425,6 +429,16 @@ function parseMessage(body: string): ParsedAction {
   const habitCreate = text.match(/^(?:novo habito|nova rotina|criar habito|adicionar habito|adicionar novo habito|quero criar o habito de|quero criar habito de)\s+(.+)$/i);
   if (habitCreate) {
     return { type: "habit", name: makeHabitInfinitive(habitCreate[1]), complete: false };
+  }
+
+  if (/\b(leitura|pagina|paginas|livro)\b/i.test(text) && /\b(finalizada|finalizado|terminei|conclui|completei|li)\b/i.test(text)) {
+    return {
+      type: "habit",
+      name: "ler uma pagina",
+      complete: true,
+      amount: extractCount(text) || 1,
+      goalTitle: "ler pagina",
+    };
   }
 
   const habitComplete = text.match(/^(?:completei|conclui|fiz|terminei|li|caminhei|corri|bebi|treinei|estudei|meditei|alonguei|acordei|dormi)\s+(.+)$/i);
@@ -684,6 +698,32 @@ async function answerQuery(userId: string, query: Extract<ParsedAction, { type: 
     if (error) throw error;
     const total = (data ?? []).reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
     return `Consulta:\n${query === "expenses_week" ? "Despesas da semana" : "Despesas de hoje"}: ${formatCurrency(total)}`;
+  }
+
+  if (query === "day_summary") {
+    const currentDay = today();
+    const [
+      { data: expenses, error: expensesError },
+      { data: income, error: incomeError },
+      { data: habits, error: habitsError },
+      { data: savings, error: savingsError },
+    ] = await Promise.all([
+      supabase.from("expenses").select("amount").eq("user_id", userId).eq("date", currentDay),
+      supabase.from("income").select("amount,status").eq("user_id", userId).eq("expected_date", currentDay),
+      supabase.from("habit_completions").select("id").eq("user_id", userId).eq("completed_date", currentDay),
+      supabase.from("savings").select("total_saved").eq("user_id", userId).maybeSingle(),
+    ]);
+    if (expensesError) throw expensesError;
+    if (incomeError) throw incomeError;
+    if (habitsError) throw habitsError;
+    if (savingsError) throw savingsError;
+
+    const expenseTotal = (expenses ?? []).reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+    const receivedTotal = (income ?? [])
+      .filter((item) => item.status === "received")
+      .reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+
+    return `Analise de hoje:\nGastos: ${formatCurrency(expenseTotal)}\nRecebido: ${formatCurrency(receivedTotal)}\nGuardado: ${formatCurrency(Number(savings?.total_saved ?? 0))}\nHabitos concluidos: ${habits?.length ?? 0}`;
   }
 
   const [{ data: expenses, error: expensesError }, { data: income, error: incomeError }, { data: savings, error: savingsError }] = await Promise.all([
