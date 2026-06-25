@@ -1003,6 +1003,29 @@ Deno.serve(async (req) => {
       const value = change?.value;
       const phoneNumberId = value?.metadata?.phone_number_id;
 
+      for (const statusEvent of value?.statuses ?? []) {
+        const recipientPhone = normalizePhone(statusEvent?.recipient_id);
+        const { data: connection } = recipientPhone
+          ? await supabase
+              .from("whatsapp_connections")
+              .select("id,user_id")
+              .eq("phone_e164", recipientPhone)
+              .eq("is_active", true)
+              .maybeSingle()
+          : { data: null };
+
+        await supabase.from("whatsapp_messages").insert({
+          connection_id: connection?.id ?? null,
+          user_id: connection?.user_id ?? null,
+          provider_message_id: statusEvent?.id ?? null,
+          direction: "outbound",
+          body: statusEvent?.errors?.[0]?.message ?? null,
+          parsed_action: null,
+          raw_payload: statusEvent,
+          status: statusEvent?.status ?? "delivery_status",
+        });
+      }
+
       for (const message of value?.messages ?? []) {
         const fromRaw = message?.from;
         const fromPhone = normalizePhone(fromRaw);
