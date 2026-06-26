@@ -81,7 +81,7 @@ function today() {
   return localDateString(new Date());
 }
 
-function localDateString(date: Date) {
+function localDateParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
@@ -89,10 +89,16 @@ function localDateString(date: Date) {
     day: "2-digit",
   }).formatToParts(date);
 
-  const year = parts.find((part) => part.type === "year")?.value;
-  const month = parts.find((part) => part.type === "month")?.value;
-  const day = parts.find((part) => part.type === "day")?.value;
-  return `${year}-${month}-${day}`;
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value),
+  };
+}
+
+function localDateString(date: Date) {
+  const { year, month, day } = localDateParts(date);
+  return dateStringFromParts(year, month, day);
 }
 
 function dateStringFromParts(year: number, month: number, day: number) {
@@ -100,20 +106,16 @@ function dateStringFromParts(year: number, month: number, day: number) {
 }
 
 function tomorrow() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return localDateString(date);
+  return addDays(1);
 }
 
 function yesterday() {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return localDateString(date);
+  return addDays(-1);
 }
 
 function addDays(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
+  const { year, month, day } = localDateParts();
+  const date = new Date(Date.UTC(year, month - 1, day + days, 12));
   return localDateString(date);
 }
 
@@ -137,7 +139,7 @@ function parseDate(text: string) {
   if (explicit) {
     const day = explicit[1].padStart(2, "0");
     const month = explicit[2].padStart(2, "0");
-    const currentYear = new Date().getFullYear();
+    const currentYear = localDateParts().year;
     const rawYear = explicit[3];
     const year = rawYear ? (rawYear.length === 2 ? `20${rawYear}` : rawYear) : String(currentYear);
     return `${year}-${month}-${day}`;
@@ -145,20 +147,21 @@ function parseDate(text: string) {
 
   const dayOnly = text.match(/\bdia\s+(\d{1,2})\b/i);
   if (dayOnly) {
-    const now = new Date();
+    const now = localDateParts();
     const day = Number(dayOnly[1]);
-    const date = new Date(now.getFullYear(), now.getMonth(), day);
-    if (date < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-      date.setMonth(date.getMonth() + 1);
+    const date = new Date(Date.UTC(now.year, now.month - 1, day, 12));
+    const todayDate = new Date(Date.UTC(now.year, now.month - 1, now.day, 12));
+    if (date < todayDate) {
+      date.setUTCMonth(date.getUTCMonth() + 1);
     }
-    return dateStringFromParts(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    return dateStringFromParts(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
   }
 
   const untilMonth = text.match(/\b(?:ate|pra|para)\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i);
   if (untilMonth) {
-    const now = new Date();
+    const now = localDateParts();
     const month = monthNames[untilMonth[1]];
-    const year = month < now.getMonth() + 1 ? now.getFullYear() + 1 : now.getFullYear();
+    const year = month < now.month ? now.year + 1 : now.year;
     return dateStringFromParts(year, month, new Date(year, month, 0).getDate());
   }
 
@@ -166,8 +169,8 @@ function parseDate(text: string) {
   if (/\bamanha\b/i.test(text)) return tomorrow();
   if (/\bsemana que vem\b/i.test(text)) return addDays(7);
   if (/\bmes que vem\b/i.test(text)) {
-    const date = new Date();
-    date.setMonth(date.getMonth() + 1);
+    const { year, month, day } = localDateParts();
+    const date = new Date(Date.UTC(year, month, day, 12));
     return localDateString(date);
   }
   return today();

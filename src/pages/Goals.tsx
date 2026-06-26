@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateOnly } from '@/lib/dates';
 
 const ICON_MAP: Record<string, any> = {
   DollarSign, Heart, Briefcase, BookOpen, Activity, Target, TrendingUp, Award, Calendar, Clock,
@@ -293,7 +294,7 @@ export default function Goals() {
                         {goal.end_date && (
                           <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                             <Calendar className="h-2.5 w-2.5" />
-                            {new Date(goal.end_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                            {formatDateOnly(goal.end_date, { day: '2-digit', month: 'short' })}
                           </span>
                         )}
                       </div>
