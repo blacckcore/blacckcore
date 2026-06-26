@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -21,6 +22,7 @@ import { useIncome } from '@/hooks/useIncome';
 import { useHabits } from '@/hooks/useHabits';
 import { useNavigate } from 'react-router-dom';
 import { localDateString } from '@/lib/dates';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -31,8 +33,23 @@ type DashboardStat = {
   subtitle?: string;
 };
 
+type CopilotPrompt = {
+  id: 'save' | 'habit' | 'reserve';
+  label: string;
+  route: string;
+};
+
+type CopilotAnswer = {
+  title: string;
+  text: string;
+  actionLabel: string;
+  route: string;
+};
+
 const Index = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [copilotAnswer, setCopilotAnswer] = useState<CopilotAnswer | null>(null);
   const { blocks } = useDashboardLayout();
   const { total: totalExpenses } = useExpenses();
   const { savings } = useSavings();
@@ -43,6 +60,9 @@ const Index = () => {
   const completedToday = habits.filter(h =>
     completions.some(c => c.habit_id === h.id && c.completed_date === today)
   ).length;
+  const pendingHabit = habits.find(h =>
+    !completions.some(c => c.habit_id === h.id && c.completed_date === today)
+  );
 
   const visibleBlocks = blocks.filter(b => b.visible);
   const statBlocks = visibleBlocks.filter(b => ['savings', 'expenses', 'income', 'habits'].includes(b.id));
@@ -118,12 +138,113 @@ const Index = () => {
           icon: ShieldCheck,
         },
   ];
-
-  const copilotPrompts = [
-    'Como posso economizar mais este mês?',
-    'Qual hábito devo priorizar hoje?',
-    'Minha reserva está no ritmo certo?',
+  const copilotPrompts: CopilotPrompt[] = [
+    {
+      id: 'save',
+      label: 'Como posso economizar mais este mês?',
+      route: '/despesas',
+    },
+    {
+      id: 'habit',
+      label: 'Qual hábito devo priorizar hoje?',
+      route: '/habitos',
+    },
+    {
+      id: 'reserve',
+      label: 'Minha reserva está no ritmo certo?',
+      route: '/economia',
+    },
   ];
+
+  const getCopilotAnswer = (prompt: CopilotPrompt): CopilotAnswer => {
+    if (prompt.id === 'save') {
+      if (totalExpenses <= 0) {
+        return {
+          title: 'Ainda nao tenho gastos para analisar',
+          text: 'Registre algumas despesas pelo WhatsApp ou pela tela de despesas. Depois eu consigo apontar onde cortar primeiro.',
+          actionLabel: 'Abrir despesas',
+          route: prompt.route,
+        };
+      }
+
+      if (netBalance < 0) {
+        return {
+          title: 'Corte um gasto variavel primeiro',
+          text: `Suas despesas passaram as receitas recebidas em ${formatCurrency(Math.abs(netBalance))}. Comece revendo mercado, delivery, cartao e compras pequenas do mes.`,
+          actionLabel: 'Ver despesas',
+          route: prompt.route,
+        };
+      }
+
+      return {
+        title: 'Voce ainda tem margem positiva',
+        text: `Sua margem atual e ${formatCurrency(netBalance)}. Para economizar mais, escolha um limite pequeno para gastos variaveis ate o fim do mes.`,
+        actionLabel: 'Ver despesas',
+        route: prompt.route,
+      };
+    }
+
+    if (prompt.id === 'habit') {
+      if (habitTotal <= 0) {
+        return {
+          title: 'Crie um habito bem simples',
+          text: 'Comece com uma acao de ate 5 minutos, como ler 1 pagina, caminhar 500 metros ou beber agua.',
+          actionLabel: 'Criar habito',
+          route: prompt.route,
+        };
+      }
+
+      if (pendingHabit) {
+        return {
+          title: `Priorize: ${pendingHabit.name}`,
+          text: 'Esse e o proximo habito pendente de hoje. Faca uma versao pequena agora e marque como concluido.',
+          actionLabel: 'Abrir habitos',
+          route: prompt.route,
+        };
+      }
+
+      return {
+        title: 'Rotina de hoje completa',
+        text: 'Todos os habitos de hoje foram concluidos. Mantenha o ritmo e evite criar coisa demais de uma vez.',
+        actionLabel: 'Ver habitos',
+        route: prompt.route,
+      };
+    }
+
+    if (goalAmount <= 0) {
+      return {
+        title: 'Sua reserva ainda nao tem meta',
+        text: `Voce tem ${formatCurrency(savedAmount)} guardado. Defina uma meta para eu conseguir acompanhar se a reserva esta no ritmo certo.`,
+        actionLabel: 'Definir meta',
+        route: prompt.route,
+      };
+    }
+
+    if (savedAmount >= goalAmount) {
+      return {
+        title: 'Reserva acima da meta',
+        text: `Voce tem ${formatCurrency(savedAmount)} guardado e a meta era ${formatCurrency(goalAmount)}. Agora vale criar a proxima camada da reserva.`,
+        actionLabel: 'Ver economia',
+        route: prompt.route,
+      };
+    }
+
+    return {
+      title: 'Reserva em andamento',
+      text: `Voce tem ${formatCurrency(savedAmount)} de ${formatCurrency(goalAmount)} (${goalProgress}%). Faltam ${formatCurrency(goalMissing)} para completar a meta.`,
+      actionLabel: 'Ver economia',
+      route: prompt.route,
+    };
+  };
+
+  const handleCopilotPrompt = (prompt: CopilotPrompt) => {
+    const answer = getCopilotAnswer(prompt);
+    setCopilotAnswer(answer);
+    toast({
+      title: answer.title,
+      description: answer.text,
+    });
+  };
 
   return (
     <div className="space-y-10">
@@ -245,15 +366,43 @@ const Index = () => {
           <div className="space-y-2">
             {copilotPrompts.map((prompt) => (
               <button
-                key={prompt}
+                key={prompt.label}
                 type="button"
+                onClick={() => handleCopilotPrompt(prompt)}
                 className="w-full flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-secondary/35 px-4 py-3 text-left text-sm text-foreground hover:border-silver/25 hover:bg-secondary/70"
               >
-                <span>{prompt}</span>
+                <span>{prompt.label}</span>
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </button>
             ))}
           </div>
+          <AnimatePresence mode="wait">
+            {copilotAnswer && (
+              <motion.div
+                key={copilotAnswer.title}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="mt-4 rounded-xl border border-border/70 bg-secondary/45 p-4"
+              >
+                <p className="text-sm font-semibold text-foreground mb-1">
+                  {copilotAnswer.title}
+                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground mb-3">
+                  {copilotAnswer.text}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate(copilotAnswer.route)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary"
+                >
+                  {copilotAnswer.actionLabel}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.section>
       </div>
 
