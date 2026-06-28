@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { LanguageProvider } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { AppLayout } from "@/components/AppLayout";
@@ -97,18 +98,20 @@ const App = () => (
   >
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/onboarding" element={<OnboardingRoute />} />
-              <Route path="/" element={<RootGate />} />
-              <Route path="/*" element={<ProtectedShell />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
+        <LanguageProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/onboarding" element={<OnboardingRoute />} />
+                <Route path="/" element={<RootGate />} />
+                <Route path="/*" element={<ProtectedShell />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>

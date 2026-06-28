@@ -23,11 +23,10 @@ import { useHabits } from '@/hooks/useHabits';
 import { useNavigate } from 'react-router-dom';
 import { localDateString } from '@/lib/dates';
 import { useToast } from '@/hooks/use-toast';
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+import { useI18n } from '@/lib/i18n';
 
 type DashboardStat = {
+  title: string;
   value: string;
   icon: LucideIcon;
   subtitle?: string;
@@ -49,6 +48,7 @@ type CopilotAnswer = {
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t, money, locale } = useI18n();
   const [copilotAnswer, setCopilotAnswer] = useState<CopilotAnswer | null>(null);
   const { blocks } = useDashboardLayout();
   const { total: totalExpenses } = useExpenses();
@@ -74,112 +74,116 @@ const Index = () => {
   const goalProgress = goalAmount > 0 ? Math.min(100, Math.round((savedAmount / goalAmount) * 100)) : 0;
   const goalMissing = Math.max(0, goalAmount - savedAmount);
   const netBalance = totalReceived - totalExpenses;
-  const monthlyStatus = netBalance >= 0 ? 'positivo' : 'em atenção';
+
+  const blockTitle = (id: string, fallback: string) => {
+    const titleByBlock: Record<string, string> = {
+      savings: t('dashboard.savedMoney'),
+      expenses: t('dashboard.monthExpense'),
+      income: t('dashboard.receivable'),
+      habits: t('dashboard.todayHabits'),
+      'daily-progress': t('dashboard.dailyProgress'),
+      'savings-goal': t('dashboard.savingsGoal'),
+    };
+    return titleByBlock[id] ?? fallback;
+  };
 
   const statData: Record<string, DashboardStat> = {
     savings: {
-      value: formatCurrency(savedAmount),
+      title: t('dashboard.savedMoney'),
+      value: money(savedAmount),
       icon: Wallet,
-      subtitle: goalAmount > 0 ? `${goalProgress}% da meta` : 'Defina uma meta de reserva',
+      subtitle: goalAmount > 0 ? t('dashboard.goalPercent', { value: goalProgress }) : t('dashboard.reserveGoal'),
     },
     expenses: {
-      value: formatCurrency(totalExpenses),
+      title: t('dashboard.monthExpense'),
+      value: money(totalExpenses),
       icon: TrendingDown,
-      subtitle: 'Gasto registrado neste mês',
+      subtitle: t('dashboard.monthExpenseSubtitle'),
     },
     income: {
-      value: formatCurrency(totalPending),
+      title: t('dashboard.receivable'),
+      value: money(totalPending),
       icon: TrendingUp,
-      subtitle: `${formatCurrency(totalReceived)} recebido`,
+      subtitle: t('dashboard.received', { value: money(totalReceived) }),
     },
     habits: {
+      title: t('dashboard.todayHabits'),
       value: `${completedToday}/${habitTotal}`,
       icon: Target,
-      subtitle: habitTotal > 0 ? `${habitRate}% concluído hoje` : 'Crie seu primeiro hábito',
+      subtitle: habitTotal > 0 ? t('dashboard.completedToday', { value: habitRate }) : t('dashboard.firstHabit'),
     },
   };
 
   const insights = [
     netBalance >= 0
       ? {
-          title: 'Fluxo positivo',
-          text: `Você está com ${formatCurrency(netBalance)} de margem entre receitas recebidas e despesas.`,
+          title: t('dashboard.positiveFlow'),
+          text: t('dashboard.positiveFlowText', { value: money(netBalance) }),
           icon: TrendingUp,
         }
       : {
-          title: 'Ajuste necessário',
-          text: `Suas despesas passaram as receitas em ${formatCurrency(Math.abs(netBalance))}. Corte um gasto variável primeiro.`,
+          title: t('dashboard.adjustNeeded'),
+          text: t('dashboard.adjustNeededText', { value: money(Math.abs(netBalance)) }),
           icon: TrendingDown,
         },
     habitTotal > 0
       ? {
-          title: 'Ritmo de hábitos',
+          title: t('dashboard.habitRhythm'),
           text: habitRate >= 70
-            ? `Você concluiu ${habitRate}% da rotina de hoje. Mantenha o bloco principal intacto.`
-            : `Você concluiu ${habitRate}% da rotina de hoje. Escolha um hábito pequeno para destravar agora.`,
+            ? t('dashboard.habitGoodText', { value: habitRate })
+            : t('dashboard.habitLowText', { value: habitRate }),
           icon: CheckCircle2,
         }
       : {
-          title: 'Comece simples',
-          text: 'Cadastre 3 hábitos: sono, treino e planejamento. O dashboard fica útil em poucos dias.',
+          title: t('dashboard.startSimple'),
+          text: t('dashboard.startSimpleText'),
           icon: CheckCircle2,
         },
     goalAmount > 0
       ? {
-          title: 'Meta de reserva',
+          title: t('dashboard.reserveTarget'),
           text: goalMissing > 0
-            ? `Faltam ${formatCurrency(goalMissing)} para fechar sua meta de economia.`
-            : 'Sua meta de economia foi alcançada. Crie a próxima camada da reserva.',
+            ? t('dashboard.reserveMissingText', { value: money(goalMissing) })
+            : t('dashboard.reserveDoneText'),
           icon: ShieldCheck,
         }
       : {
-          title: 'Reserva inteligente',
-          text: 'Defina uma meta de economia para acompanhar prazo, progresso e valor restante.',
+          title: t('dashboard.smartReserve'),
+          text: t('dashboard.smartReserveText'),
           icon: ShieldCheck,
         },
   ];
+
   const copilotPrompts: CopilotPrompt[] = [
-    {
-      id: 'save',
-      label: 'Como posso economizar mais este mês?',
-      route: '/despesas',
-    },
-    {
-      id: 'habit',
-      label: 'Qual hábito devo priorizar hoje?',
-      route: '/habitos',
-    },
-    {
-      id: 'reserve',
-      label: 'Minha reserva está no ritmo certo?',
-      route: '/economia',
-    },
+    { id: 'save', label: t('dashboard.promptSave'), route: '/despesas' },
+    { id: 'habit', label: t('dashboard.promptHabit'), route: '/habitos' },
+    { id: 'reserve', label: t('dashboard.promptReserve'), route: '/economia' },
   ];
 
   const getCopilotAnswer = (prompt: CopilotPrompt): CopilotAnswer => {
     if (prompt.id === 'save') {
       if (totalExpenses <= 0) {
         return {
-          title: 'Ainda nao tenho gastos para analisar',
-          text: 'Registre algumas despesas pelo WhatsApp ou pela tela de despesas. Depois eu consigo apontar onde cortar primeiro.',
-          actionLabel: 'Abrir despesas',
+          title: t('dashboard.noExpensesTitle'),
+          text: t('dashboard.noExpensesText'),
+          actionLabel: t('dashboard.openExpenses'),
           route: prompt.route,
         };
       }
 
       if (netBalance < 0) {
         return {
-          title: 'Corte um gasto variavel primeiro',
-          text: `Suas despesas passaram as receitas recebidas em ${formatCurrency(Math.abs(netBalance))}. Comece revendo mercado, delivery, cartao e compras pequenas do mes.`,
-          actionLabel: 'Ver despesas',
+          title: t('dashboard.cutExpenseTitle'),
+          text: t('dashboard.cutExpenseText', { value: money(Math.abs(netBalance)) }),
+          actionLabel: t('dashboard.viewExpenses'),
           route: prompt.route,
         };
       }
 
       return {
-        title: 'Voce ainda tem margem positiva',
-        text: `Sua margem atual e ${formatCurrency(netBalance)}. Para economizar mais, escolha um limite pequeno para gastos variaveis ate o fim do mes.`,
-        actionLabel: 'Ver despesas',
+        title: t('dashboard.positiveMarginTitle'),
+        text: t('dashboard.positiveMarginText', { value: money(netBalance) }),
+        actionLabel: t('dashboard.viewExpenses'),
         route: prompt.route,
       };
     }
@@ -187,52 +191,57 @@ const Index = () => {
     if (prompt.id === 'habit') {
       if (habitTotal <= 0) {
         return {
-          title: 'Crie um habito bem simples',
-          text: 'Comece com uma acao de ate 5 minutos, como ler 1 pagina, caminhar 500 metros ou beber agua.',
-          actionLabel: 'Criar habito',
+          title: t('dashboard.createSimpleHabitTitle'),
+          text: t('dashboard.createSimpleHabitText'),
+          actionLabel: t('dashboard.createHabit'),
           route: prompt.route,
         };
       }
 
       if (pendingHabit) {
         return {
-          title: `Priorize: ${pendingHabit.name}`,
-          text: 'Esse e o proximo habito pendente de hoje. Faca uma versao pequena agora e marque como concluido.',
-          actionLabel: 'Abrir habitos',
+          title: t('dashboard.prioritize', { name: pendingHabit.name }),
+          text: t('dashboard.prioritizeText'),
+          actionLabel: t('dashboard.openHabits'),
           route: prompt.route,
         };
       }
 
       return {
-        title: 'Rotina de hoje completa',
-        text: 'Todos os habitos de hoje foram concluidos. Mantenha o ritmo e evite criar coisa demais de uma vez.',
-        actionLabel: 'Ver habitos',
+        title: t('dashboard.todayCompleteTitle'),
+        text: t('dashboard.todayCompleteText'),
+        actionLabel: t('dashboard.viewHabits'),
         route: prompt.route,
       };
     }
 
     if (goalAmount <= 0) {
       return {
-        title: 'Sua reserva ainda nao tem meta',
-        text: `Voce tem ${formatCurrency(savedAmount)} guardado. Defina uma meta para eu conseguir acompanhar se a reserva esta no ritmo certo.`,
-        actionLabel: 'Definir meta',
+        title: t('dashboard.noReserveGoalTitle'),
+        text: t('dashboard.noReserveGoalText', { value: money(savedAmount) }),
+        actionLabel: t('dashboard.setGoal'),
         route: prompt.route,
       };
     }
 
     if (savedAmount >= goalAmount) {
       return {
-        title: 'Reserva acima da meta',
-        text: `Voce tem ${formatCurrency(savedAmount)} guardado e a meta era ${formatCurrency(goalAmount)}. Agora vale criar a proxima camada da reserva.`,
-        actionLabel: 'Ver economia',
+        title: t('dashboard.reserveAboveTitle'),
+        text: t('dashboard.reserveAboveText', { saved: money(savedAmount), goal: money(goalAmount) }),
+        actionLabel: t('dashboard.viewSavings'),
         route: prompt.route,
       };
     }
 
     return {
-      title: 'Reserva em andamento',
-      text: `Voce tem ${formatCurrency(savedAmount)} de ${formatCurrency(goalAmount)} (${goalProgress}%). Faltam ${formatCurrency(goalMissing)} para completar a meta.`,
-      actionLabel: 'Ver economia',
+      title: t('dashboard.reserveProgressTitle'),
+      text: t('dashboard.reserveProgressText', {
+        saved: money(savedAmount),
+        goal: money(goalAmount),
+        progress: goalProgress,
+        missing: money(goalMissing),
+      }),
+      actionLabel: t('dashboard.viewSavings'),
       route: prompt.route,
     };
   };
@@ -248,7 +257,6 @@ const Index = () => {
 
   return (
     <div className="space-y-10">
-      {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -256,16 +264,13 @@ const Index = () => {
         className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Centro de comando</p>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver leading-tight">Bom te ver no BlacckCore</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Seu mês está {monthlyStatus}. Veja dinheiro, hábitos e metas juntos para decidir o próximo passo sem ruído.
-          </p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{t('dashboard.eyebrow')}</p>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver leading-tight">{t('dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">{t('dashboard.subtitle')}</p>
         </div>
         <DashboardCustomizer />
       </motion.div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <AnimatePresence mode="popLayout">
           {statBlocks.map((block, i) => {
@@ -281,13 +286,13 @@ const Index = () => {
                 transition={{ delay: i * 0.07, ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
               >
                 <StatCard
-                  title={block.title}
+                  title={data.title}
                   value={data.value}
                   icon={data.icon}
                   subtitle={data.subtitle}
                   delay={i * 0.07}
                   onClick={block.id === 'savings' ? () => navigate('/economia') : undefined}
-                  actionLabel={block.id === 'savings' ? 'Clique para alterar' : undefined}
+                  actionLabel={block.id === 'savings' ? t('dashboard.setGoal') : undefined}
                 />
               </motion.div>
             );
@@ -295,7 +300,6 @@ const Index = () => {
         </AnimatePresence>
       </div>
 
-      {/* Intelligence layer */}
       <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.7fr] gap-5">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
@@ -306,33 +310,23 @@ const Index = () => {
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">
-                Insights inteligentes
+                {t('dashboard.insights')}
               </p>
               <h2 className="text-lg font-semibold font-display text-foreground">
-                O que merece sua atenção agora
+                {t('dashboard.attention')}
               </h2>
             </div>
-            <div
-              className="p-2 rounded-xl border border-border/80"
-              style={{ background: 'hsl(var(--brand) / 0.1)' }}
-            >
+            <div className="p-2 rounded-xl border border-border/80" style={{ background: 'hsl(var(--brand) / 0.1)' }}>
               <Sparkles className="h-4 w-4" style={{ color: 'hsl(var(--brand))' }} />
             </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
             {insights.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-xl border border-border/70 bg-secondary/35 p-4"
-              >
+              <div key={item.title} className="rounded-xl border border-border/70 bg-secondary/35 p-4">
                 <item.icon className="h-4 w-4 mb-3" style={{ color: 'hsl(var(--brand))' }} />
-                <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-                  {item.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {item.text}
-                </p>
+                <h3 className="font-display text-sm font-semibold text-foreground mb-1">{item.title}</h3>
+                <p className="text-xs leading-relaxed text-muted-foreground">{item.text}</p>
               </div>
             ))}
           </div>
@@ -345,24 +339,15 @@ const Index = () => {
           className="glass-card card-highlight p-6"
         >
           <div className="flex items-center gap-3 mb-5">
-            <div
-              className="p-2 rounded-xl border border-border/80"
-              style={{ background: 'hsl(var(--brand) / 0.1)' }}
-            >
+            <div className="p-2 rounded-xl border border-border/80" style={{ background: 'hsl(var(--brand) / 0.1)' }}>
               <MessageCircle className="h-4 w-4" style={{ color: 'hsl(var(--brand))' }} />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-                Copiloto
-              </p>
-              <h2 className="text-lg font-semibold font-display text-foreground">
-                BlacckCore
-              </h2>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{t('dashboard.copilot')}</p>
+              <h2 className="text-lg font-semibold font-display text-foreground">BlacckCore</h2>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-            Use as perguntas prontas para transformar os dados do painel em uma próxima ação.
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t('dashboard.copilotIntro')}</p>
           <div className="space-y-2">
             {copilotPrompts.map((prompt) => (
               <button
@@ -386,12 +371,8 @@ const Index = () => {
                 transition={{ duration: 0.2 }}
                 className="mt-4 rounded-xl border border-border/70 bg-secondary/45 p-4"
               >
-                <p className="text-sm font-semibold text-foreground mb-1">
-                  {copilotAnswer.title}
-                </p>
-                <p className="text-xs leading-relaxed text-muted-foreground mb-3">
-                  {copilotAnswer.text}
-                </p>
+                <p className="text-sm font-semibold text-foreground mb-1">{copilotAnswer.title}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground mb-3">{copilotAnswer.text}</p>
                 <button
                   type="button"
                   onClick={() => navigate(copilotAnswer.route)}
@@ -406,7 +387,6 @@ const Index = () => {
         </motion.section>
       </div>
 
-      {/* Bottom blocks */}
       {bottomBlocks.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <AnimatePresence mode="popLayout">
@@ -426,31 +406,22 @@ const Index = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">
-                          Progresso
+                          {t('dashboard.dailyProgress')}
                         </p>
                         <h2 className="text-base font-semibold font-display text-foreground leading-none">
-                          {block.title}
+                          {blockTitle(block.id, block.title)}
                         </h2>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold font-display text-gradient-silver">
-                          {completedToday}
-                        </span>
-                        <span className="text-muted-foreground text-sm font-medium">
-                          /{habitTotal}
-                        </span>
+                        <span className="text-2xl font-bold font-display text-gradient-silver">{completedToday}</span>
+                        <span className="text-muted-foreground text-sm font-medium">/{habitTotal}</span>
                       </div>
                     </div>
-                    <ProgressBar
-                      value={completedToday}
-                      max={habitTotal || 1}
-                      label="Hábitos completados"
-                      glow
-                    />
+                    <ProgressBar value={completedToday} max={habitTotal || 1} label={t('dashboard.completedHabits')} glow />
                     <p className="text-xs text-muted-foreground">
                       {completedToday === habitTotal && habitTotal > 0
-                        ? 'Todos os hábitos foram completados hoje.'
-                        : `${habitTotal - completedToday} hábito${habitTotal - completedToday !== 1 ? 's' : ''} restante${habitTotal - completedToday !== 1 ? 's' : ''}`}
+                        ? t('dashboard.allHabitsDone')
+                        : t('dashboard.remainingHabits', { count: habitTotal - completedToday })}
                     </p>
                   </>
                 )}
@@ -460,28 +431,28 @@ const Index = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">
-                          Poupança
+                          {t('dashboard.savingsGoal')}
                         </p>
                         <h2 className="text-base font-semibold font-display text-foreground leading-none">
-                          {block.title}
+                          {blockTitle(block.id, block.title)}
                         </h2>
                       </div>
                       {savings?.goal_date && (
                         <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg border border-border/60">
-                          {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                          {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString(locale, { month: 'short', year: 'numeric' })}
                         </span>
                       )}
                     </div>
                     <ProgressBar
                       value={Number(savings?.total_saved ?? 0)}
                       max={Number(savings?.goal_amount ?? 1)}
-                      label={`${formatCurrency(Number(savings?.total_saved ?? 0))} de ${formatCurrency(Number(savings?.goal_amount ?? 0))}`}
+                      label={`${money(Number(savings?.total_saved ?? 0))} / ${money(Number(savings?.goal_amount ?? 0))}`}
                       glow
                     />
                     <p className="text-xs text-muted-foreground">
                       {savings?.goal_amount
-                        ? `Faltam ${formatCurrency(Math.max(0, Number(savings.goal_amount) - Number(savings.total_saved ?? 0)))} para atingir a meta`
-                        : 'Defina uma meta de poupança'}
+                        ? t('dashboard.reserveMissingText', { value: money(Math.max(0, Number(savings.goal_amount) - Number(savings.total_saved ?? 0))) })
+                        : t('dashboard.reserveGoal')}
                     </p>
                   </>
                 )}

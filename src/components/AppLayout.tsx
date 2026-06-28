@@ -2,8 +2,12 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useI18n } from '@/lib/i18n';
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const { locale } = useI18n();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -22,12 +26,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
               <div className="h-4 w-px bg-border" />
               <span className="text-xs text-muted-foreground font-medium tracking-wide hidden sm:block">
-                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
               </span>
             </div>
 
             {/* Right side controls */}
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <ThemeToggle />
             </div>
           </header>
