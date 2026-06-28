@@ -12,6 +12,7 @@ import { useIncome } from '@/hooks/useIncome';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ function ConfettiOverlay({ show }: { show: boolean }) {
 }
 
 export default function Savings() {
+  const { t, money, locale } = useI18n();
   const { savings, upsertSavings } = useSavings();
   const { debts, totalDebt, addDebt, deleteDebt } = useDebts();
   const { income } = useIncome();
@@ -169,29 +171,29 @@ export default function Savings() {
 
       <div className="flex items-center justify-between">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver">Economia</h1>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('savings.title')}</h1>
         </motion.div>
         <Button variant="outline" onClick={startEdit} className="border-border">
-          <Edit2 className="h-4 w-4 mr-1" /> Editar
+          <Edit2 className="h-4 w-4 mr-1" /> {t('common.edit')}
         </Button>
       </div>
 
       {editing ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-6 space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground">Valor total guardado</label>
+            <label className="text-sm text-muted-foreground">{t('savings.savedValue')}</label>
             <Input type="number" value={form.total_saved} onChange={e => setForm({ ...form, total_saved: e.target.value })} className="bg-secondary border-border" />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Meta de economia</label>
+            <label className="text-sm text-muted-foreground">{t('savings.goalAmount')}</label>
             <Input type="number" value={form.goal_amount} onChange={e => setForm({ ...form, goal_amount: e.target.value })} className="bg-secondary border-border" />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Data da meta</label>
+            <label className="text-sm text-muted-foreground">{t('savings.goalDate')}</label>
             <Input type="date" value={form.goal_date} onChange={e => setForm({ ...form, goal_date: e.target.value })} className="bg-secondary border-border" />
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleSave} className="gradient-silver text-primary-foreground">Salvar</Button>
+            <Button onClick={handleSave} className="gradient-silver text-primary-foreground">{t('common.save')}</Button>
             <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
           </div>
         </motion.div>
@@ -204,28 +206,28 @@ export default function Savings() {
                 <PiggyBank className="h-8 w-8 text-silver" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Guardado</p>
+                <p className="text-sm text-muted-foreground">{t('savings.totalSaved')}</p>
                 <motion.p
                   key={saved}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-4xl font-bold font-display text-foreground"
                 >
-                  {formatCurrency(saved)}
+                  {money(saved)}
                 </motion.p>
               </div>
               </div>
               <Button onClick={startEdit} className="w-full sm:w-auto gradient-silver text-primary-foreground">
-                <Edit2 className="h-4 w-4 mr-1" /> Alterar dinheiro guardado
+                <Edit2 className="h-4 w-4 mr-1" /> {t('savings.changeSaved')}
               </Button>
             </div>
-            <ProgressBar value={saved} max={goal || 1} label={`Meta: ${formatCurrency(goal)}`} glow={savingsPercent >= 100} />
+            <ProgressBar value={saved} max={goal || 1} label={`${t('savings.goal')}: ${money(goal)}`} glow={savingsPercent >= 100} />
             <p className="text-xs text-muted-foreground mt-3">
-              Use o botao acima para ajustar o valor guardado, criar uma meta ou corrigir sua reserva.
+              {t('savings.adjustHelp')}
             </p>
             {savings?.goal_date && (
               <p className="text-sm text-muted-foreground mt-3">
-                Prazo: {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                {t('savings.deadline')}: {new Date(savings.goal_date + 'T00:00:00').toLocaleDateString(locale)}
               </p>
             )}
           </motion.div>
@@ -241,7 +243,7 @@ export default function Savings() {
                 <Shield className="h-5 w-5 text-silver" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Reserva Emergencial</h2>
+                <h2 className="font-semibold text-foreground">{t('savings.emergencyReserve')}</h2>
                 <p className="text-xs text-muted-foreground">
                   {reserveForm.type === 'auto' ? `Baseada em ${reserveMonths} meses de despesas` : 'Meta manual'}
                 </p>
@@ -250,11 +252,11 @@ export default function Savings() {
             <Dialog open={reserveOpen} onOpenChange={setReserveOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-border">
-                  <Edit2 className="h-3.5 w-3.5 mr-1" /> Editar Reserva
+                  <Edit2 className="h-3.5 w-3.5 mr-1" /> {t('savings.editReserve')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
-                <DialogHeader><DialogTitle className="font-display">Configurar Reserva Emergencial</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="font-display">{t('savings.emergencyReserve')}</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm text-muted-foreground mb-1 block">Tipo de cálculo</label>
@@ -287,7 +289,7 @@ export default function Savings() {
                       <Input type="number" value={reserveForm.manual_goal} onChange={e => setReserveForm({ ...reserveForm, manual_goal: e.target.value })} className="bg-secondary border-border" placeholder="Ex: 15000" />
                     </div>
                   )}
-                  <Button onClick={handleSaveReserve} className="w-full gradient-silver text-primary-foreground">Salvar como Meta</Button>
+                  <Button onClick={handleSaveReserve} className="w-full gradient-silver text-primary-foreground">{t('common.save')}</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -296,8 +298,8 @@ export default function Savings() {
           {/* Reserve progress */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Atual: {formatCurrency(saved)}</span>
-              <span className="text-muted-foreground">Meta: {formatCurrency(idealReserve)}</span>
+              <span className="text-muted-foreground">Atual: {money(saved)}</span>
+              <span className="text-muted-foreground">{t('savings.goal')}: {money(idealReserve)}</span>
             </div>
             <ProgressBar value={saved} max={idealReserve || 1} showPercentage glow={reserveProgress >= 100} />
           </div>
@@ -351,7 +353,7 @@ export default function Savings() {
 
       {/* Debts Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <h2 className="text-xl font-bold font-display text-foreground mb-4">Dívidas e Plano de Quitação</h2>
+        <h2 className="text-xl font-bold font-display text-foreground mb-4">{t('savings.debtsPlan')}</h2>
 
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -360,14 +362,14 @@ export default function Savings() {
                 <TrendingDown className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Minhas Dívidas</h2>
-                <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalDebt)}</p>
+                <h2 className="font-semibold text-foreground">{t('savings.myDebts')}</h2>
+                <p className="text-sm text-muted-foreground">{t('common.total')}: {money(totalDebt)}</p>
               </div>
             </div>
             <Dialog open={debtOpen} onOpenChange={setDebtOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gradient-silver text-primary-foreground">
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Dívida
+                  <Plus className="h-4 w-4 mr-1" /> {t('savings.addDebt')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
@@ -406,9 +408,9 @@ export default function Savings() {
                       </button>
                     </div>
                     <div className="flex gap-4 text-xs text-muted-foreground">
-                      <span>Restante: {formatCurrency(Number(debt.remaining_amount))}</span>
+                      <span>{t('savings.remaining')}: {money(Number(debt.remaining_amount))}</span>
                       <span>Juros: {Number(debt.interest_rate)}%</span>
-                      {debt.due_date && <span>Venc: {new Date(debt.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
+                      {debt.due_date && <span>{t('savings.due')}: {new Date(debt.due_date + 'T00:00:00').toLocaleDateString(locale)}</span>}
                     </div>
                     <ProgressBar value={progress} max={100} label={`${Math.round(progress)}% quitado`} />
                   </motion.div>
@@ -416,7 +418,7 @@ export default function Savings() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma dívida cadastrada</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t('savings.noDebts')}</p>
           )}
         </div>
 

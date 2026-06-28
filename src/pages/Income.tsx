@@ -11,13 +11,12 @@ import { useIncomeTypes, INCOME_COLORS, INCOME_ICONS } from '@/hooks/useIncomeTy
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { localDateString } from '@/lib/dates';
+import { useI18n } from '@/lib/i18n';
 
 const ICON_COMPONENTS: Record<string, any> = { DollarSign, Briefcase, Laptop, TrendingUp, Coins, CreditCard, Banknote, Gem };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
 export default function Income() {
+  const { t, money, locale } = useI18n();
   const { income, totalPending, totalReceived, addIncome, updateIncome, deleteIncome } = useIncome();
   const { incomeTypes, seedDefaults, addType, deleteType, loading: typesLoading } = useIncomeTypes();
   const { toast } = useToast();
@@ -80,17 +79,17 @@ export default function Income() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver">A Receber</h1>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('income.title')}</h1>
         </motion.div>
         <div className="flex gap-2">
           <Dialog open={typeOpen} onOpenChange={setTypeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="border-border">
-                <Palette className="h-4 w-4 mr-1" /> Tipos
+                <Palette className="h-4 w-4 mr-1" /> {t('income.types')}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-display">Tipos de Renda</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-display">{t('income.incomeTypes')}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
                   {incomeTypes.map(t => {
@@ -108,7 +107,7 @@ export default function Income() {
                   })}
                 </div>
                 <div className="border-t border-border pt-3 space-y-2">
-                  <Input placeholder="Nome do tipo" value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} className="bg-secondary border-border" />
+                  <Input placeholder={t('expenses.typeName')} value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} className="bg-secondary border-border" />
                   <div className="flex gap-2">
                     <div className="flex gap-1 flex-wrap flex-1">
                       {INCOME_COLORS.map(c => (
@@ -126,7 +125,7 @@ export default function Income() {
                       );
                     })}
                   </div>
-                  <Button onClick={handleAddType} className="w-full gradient-silver text-primary-foreground" size="sm">Criar Tipo</Button>
+                  <Button onClick={handleAddType} className="w-full gradient-silver text-primary-foreground" size="sm">{t('expenses.createType')}</Button>
                 </div>
               </div>
             </DialogContent>
@@ -134,30 +133,30 @@ export default function Income() {
           <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) setEditingId(null); }}>
             <DialogTrigger asChild>
               <Button className="gradient-silver text-primary-foreground">
-                <Plus className="h-4 w-4 mr-1" /> Adicionar
+                <Plus className="h-4 w-4 mr-1" /> {t('common.add')}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-display">{editingId ? 'Editar' : 'Novo'} Recebimento</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-display">{editingId ? t('common.edit') : t('income.newIncome')}</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Input placeholder="Descrição" value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="bg-secondary border-border" />
+                <Input placeholder={t('income.description')} value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="bg-secondary border-border" />
                 <Select value={form.income_type_id || 'none'} onValueChange={v => setForm({ ...form, income_type_id: v === 'none' ? '' : v })}>
-                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={t('common.type')} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sem tipo</SelectItem>
+                    <SelectItem value="none">{t('expenses.noType')}</SelectItem>
                     {incomeTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Input type="number" placeholder="Valor" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} className="bg-secondary border-border" />
+                <Input type="number" placeholder={t('common.value')} value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} className="bg-secondary border-border" />
                 <Input type="date" value={form.expected_date} onChange={e => setForm({ ...form, expected_date: e.target.value })} className="bg-secondary border-border" />
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="received">Recebido</SelectItem>
+                    <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                    <SelectItem value="received">{t('income.received')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={handleSubmit} className="w-full gradient-silver text-primary-foreground">{editingId ? 'Salvar' : 'Adicionar'}</Button>
+                <Button onClick={handleSubmit} className="w-full gradient-silver text-primary-foreground">{editingId ? t('common.save') : t('common.add')}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -165,14 +164,14 @@ export default function Income() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard title="Pendente" value={formatCurrency(totalPending)} icon={DollarSign} />
-        <StatCard title="Recebido" value={formatCurrency(totalReceived)} icon={DollarSign} delay={0.1} />
+        <StatCard title={t('common.pending')} value={money(totalPending)} icon={DollarSign} />
+        <StatCard title={t('income.received')} value={money(totalReceived)} icon={DollarSign} delay={0.1} />
       </div>
 
       {/* Analytics by type */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-4">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t('income.byType')}</h2>
           <div className="flex gap-3 flex-wrap">
             {byType.map(t => {
               const IC = ICON_COMPONENTS[t.icon] || DollarSign;
@@ -181,7 +180,7 @@ export default function Income() {
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
                   <IC className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-xs font-medium">{t.name}</span>
-                  <span className="text-xs text-muted-foreground">{formatCurrency(t.total)}</span>
+                  <span className="text-xs text-muted-foreground">{money(t.total)}</span>
                 </motion.div>
               );
             })}
@@ -195,7 +194,7 @@ export default function Income() {
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-48 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
             {incomeTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -227,14 +226,14 @@ export default function Income() {
                     <div className="flex gap-2 text-xs text-muted-foreground">
                       {type && <span>{type.name}</span>}
                       {type && <span>•</span>}
-                      <span>{new Date(item.expected_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                      <span>{new Date(item.expected_date + 'T00:00:00').toLocaleDateString(locale)}</span>
                       <span>•</span>
-                      <span className={item.status === 'received' ? 'text-success' : 'text-warning'}>{item.status === 'received' ? 'Recebido' : 'Pendente'}</span>
+                      <span className={item.status === 'received' ? 'text-success' : 'text-warning'}>{item.status === 'received' ? t('income.received') : t('common.pending')}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-foreground">{formatCurrency(Number(item.amount))}</span>
+                  <span className="font-semibold text-foreground">{money(Number(item.amount))}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setForm({ source: item.source, amount: String(item.amount), expected_date: item.expected_date, status: item.status, income_type_id: (item as any).income_type_id || '' }); setEditingId(item.id); setOpen(true); }} aria-label={`Editar receita ${item.source}`} className="text-muted-foreground hover:text-foreground"><Edit2 className="h-4 w-4" /></button>
                     <button onClick={() => deleteIncome.mutateAsync(item.id)} aria-label={`Excluir receita ${item.source}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
@@ -244,8 +243,9 @@ export default function Income() {
             );
           })}
         </AnimatePresence>
-        {filteredIncome.length === 0 && <div className="text-center py-12 text-muted-foreground">Nenhum recebimento encontrado</div>}
+        {filteredIncome.length === 0 && <div className="text-center py-12 text-muted-foreground">{t('income.noIncome')}</div>}
       </div>
     </div>
   );
 }
+

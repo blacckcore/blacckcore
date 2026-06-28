@@ -17,15 +17,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { localDateString } from '@/lib/dates';
+import { useI18n } from '@/lib/i18n';
 
 const ICON_COMPONENTS: Record<string, any> = { UtensilsCrossed, Home, Car, Gamepad2, Heart, GraduationCap, CreditCard, AlertTriangle, Receipt };
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 const tooltipStyle = { backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' };
 
 export default function Expenses() {
+  const { t, money, locale } = useI18n();
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year] = useState(new Date().getFullYear());
   const { expenses, total, totalPaid, addExpense, updateExpense, deleteExpense } = useExpenses(month, year);
@@ -88,7 +87,9 @@ export default function Expenses() {
 
   const getTypeForItem = (item: any) => expenseTypes.find(t => t.id === item.expense_type_id);
 
-  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const months = Array.from({ length: 12 }, (_, index) =>
+    new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, index, 1))
+  );
 
   // Analytics by type
   const byType = expenseTypes.map(t => {
@@ -103,8 +104,10 @@ export default function Expenses() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver">Despesas</h1>
-          <p className="text-muted-foreground text-sm">Total: {formatCurrency(total)} · Pago: {formatCurrency(totalPaid)} · Pendente: {formatCurrency(totalPending)}</p>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('expenses.title')}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t('common.total')}: {money(total)} &middot; {t('common.paid')}: {money(totalPaid)} &middot; {t('common.pending')}: {money(totalPending)}
+          </p>
         </motion.div>
         <div className="flex gap-2 items-center">
           <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
@@ -121,11 +124,11 @@ export default function Expenses() {
           <Dialog open={typeOpen} onOpenChange={setTypeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="border-border">
-                <Palette className="h-4 w-4 mr-1" /> Tipos
+                <Palette className="h-4 w-4 mr-1" /> {t('expenses.types')}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-display">Tipos de Despesa</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-display">{t('expenses.expenseTypes')}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {expenseTypes.map(t => {
@@ -143,7 +146,7 @@ export default function Expenses() {
                   })}
                 </div>
                 <div className="border-t border-border pt-3 space-y-2">
-                  <Input placeholder="Nome do tipo" value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} className="bg-secondary border-border" />
+                  <Input placeholder={t('expenses.typeName')} value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} className="bg-secondary border-border" />
                   <div className="flex gap-1 flex-wrap">
                     {EXPENSE_COLORS.map(c => (
                       <button key={c} onClick={() => setNewType({ ...newType, color: c })} className={`w-6 h-6 rounded-full border-2 transition-all ${newType.color === c ? 'border-foreground scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
@@ -159,7 +162,7 @@ export default function Expenses() {
                       );
                     })}
                   </div>
-                  <Button onClick={handleAddType} className="w-full gradient-silver text-primary-foreground" size="sm">Criar Tipo</Button>
+                  <Button onClick={handleAddType} className="w-full gradient-silver text-primary-foreground" size="sm">{t('expenses.createType')}</Button>
                 </div>
               </div>
             </DialogContent>
@@ -168,33 +171,33 @@ export default function Expenses() {
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditingId(null); }}>
             <DialogTrigger asChild>
               <Button className="gradient-silver text-primary-foreground">
-                <Plus className="h-4 w-4 mr-1" /> Adicionar
+                <Plus className="h-4 w-4 mr-1" /> {t('common.add')}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="font-display">{editingId ? 'Editar' : 'Nova'} Despesa</DialogTitle>
+                <DialogTitle className="font-display">{editingId ? t('common.edit') : t('expenses.newExpense')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
-                <Input placeholder="Nome" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-secondary border-border" />
+                <Input placeholder={t('common.name')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-secondary border-border" />
                 <Select value={form.expense_type_id || 'none'} onValueChange={v => setForm({ ...form, expense_type_id: v === 'none' ? '' : v })}>
-                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={t('common.type')} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sem tipo</SelectItem>
+                    <SelectItem value="none">{t('expenses.noType')}</SelectItem>
                     {expenseTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Input type="number" placeholder="Valor" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} className="bg-secondary border-border" />
+                <Input type="number" placeholder={t('common.value')} value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} className="bg-secondary border-border" />
                 <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="bg-secondary border-border" />
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
+                    <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                    <SelectItem value="paid">{t('common.paid')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button onClick={handleSubmit} className="w-full gradient-silver text-primary-foreground">
-                  {editingId ? 'Salvar' : 'Adicionar'}
+                  {editingId ? t('common.save') : t('common.add')}
                 </Button>
               </div>
             </DialogContent>
@@ -205,7 +208,7 @@ export default function Expenses() {
       {/* Analytics: chips + mini pie */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-4">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Por Tipo</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t('expenses.byType')}</h2>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex gap-2 flex-wrap flex-1">
               {byType.map(t => {
@@ -222,7 +225,7 @@ export default function Expenses() {
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
                     <IC className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-xs font-medium">{t.name}</span>
-                    <span className="text-xs text-muted-foreground">{formatCurrency(t.total)}</span>
+                    <span className="text-xs text-muted-foreground">{money(t.total)}</span>
                   </motion.button>
                 );
               })}
@@ -233,7 +236,7 @@ export default function Expenses() {
                   <Pie data={byType} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={50} innerRadius={25} paddingAngle={2}>
                     {byType.map((t, i) => <Cell key={i} fill={t.color} />)}
                   </Pie>
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => money(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -247,16 +250,16 @@ export default function Expenses() {
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-40 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="all">{t('common.allTypes')}</SelectItem>
             {expenseTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-32 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="paid">Pago</SelectItem>
-            <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
+            <SelectItem value="paid">{t('common.paid')}</SelectItem>
+            <SelectItem value="pending">{t('common.pending')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -292,16 +295,16 @@ export default function Expenses() {
                       )}
                     </div>
                     <div className="flex gap-2 text-xs text-muted-foreground">
-                      <span>{new Date(exp.date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                      <span>{new Date(exp.date + 'T00:00:00').toLocaleDateString(locale)}</span>
                       <span>•</span>
                       <span className={exp.status === 'paid' ? 'text-success' : 'text-warning'}>
-                        {exp.status === 'paid' ? 'Pago' : 'Pendente'}
+                        {exp.status === 'paid' ? t('common.paid') : t('common.pending')}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-foreground">{formatCurrency(Number(exp.amount))}</span>
+                  <span className="font-semibold text-foreground">{money(Number(exp.amount))}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => startEdit(exp)} aria-label={`Editar despesa ${exp.name}`} className="text-muted-foreground hover:text-foreground transition-colors">
                       <Edit2 className="h-4 w-4" />
@@ -317,7 +320,7 @@ export default function Expenses() {
         </AnimatePresence>
         {filteredExpenses.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            Nenhuma despesa encontrada
+            {t('expenses.noExpenses')}
           </div>
         )}
       </div>

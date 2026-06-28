@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/dates';
+import { useI18n } from '@/lib/i18n';
 
 const ICON_MAP: Record<string, any> = {
   DollarSign, Heart, Briefcase, BookOpen, Activity, Target, TrendingUp, Award, Calendar, Clock,
@@ -26,12 +27,6 @@ function GoalIcon({ name, className, style }: { name: string; className?: string
   return <Icon className={className || 'h-4 w-4'} style={style} />;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  in_progress: 'Em andamento',
-  delayed: 'Atrasada',
-  completed: 'Concluída',
-};
-
 const PROGRESS_LABELS: Record<string, string> = {
   percentage: '%',
   monetary: 'R$',
@@ -39,6 +34,7 @@ const PROGRESS_LABELS: Record<string, string> = {
 };
 
 export default function Goals() {
+  const { t, locale } = useI18n();
   const { goals, goalTypes, loading, addGoal, updateGoal, deleteGoal } = useGoals();
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<string>('all');
@@ -125,17 +121,17 @@ export default function Goals() {
       {/* Header */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-display text-gradient-silver">Metas</h1>
-          <p className="text-muted-foreground text-sm">Acompanhe e conquiste seus objetivos</p>
+          <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('goals.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('goals.subtitle')}</p>
         </div>
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gradient-silver text-primary-foreground gap-1.5">
-              <Plus className="h-4 w-4" /> Nova Meta
+              <Plus className="h-4 w-4" /> {t('goals.new')}
             </Button>
           </DialogTrigger>
           <DialogContent className="glass-card max-w-md">
-            <DialogHeader><DialogTitle className="font-display">Nova Meta</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{t('goals.new')}</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">Título</Label>
@@ -189,10 +185,10 @@ export default function Goals() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Metas Ativas" value={String(activeGoals.length)} icon={Target} delay={0} />
-        <StatCard title="Concluídas (mês)" value={String(completedThisMonth.length)} icon={CheckCircle2} delay={0.1} />
-        <StatCard title="Progresso Geral" value={`${overallProgress}%`} icon={TrendingUp} delay={0.2} />
-        <StatCard title="Total" value={String(goals.length)} icon={Award} delay={0.3} />
+        <StatCard title={t('goals.active')} value={String(activeGoals.length)} icon={Target} delay={0} />
+        <StatCard title={t('goals.completedMonth')} value={String(completedThisMonth.length)} icon={CheckCircle2} delay={0.1} />
+        <StatCard title={t('goals.overall')} value={`${overallProgress}%`} icon={TrendingUp} delay={0.2} />
+        <StatCard title={t('common.total')} value={String(goals.length)} icon={Award} delay={0.3} />
       </div>
 
       {/* Filters */}
@@ -203,7 +199,7 @@ export default function Goals() {
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="all">{t('common.allTypes')}</SelectItem>
             {goalTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -212,10 +208,10 @@ export default function Goals() {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="in_progress">Em andamento</SelectItem>
-            <SelectItem value="delayed">Atrasada</SelectItem>
-            <SelectItem value="completed">Concluída</SelectItem>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
+            <SelectItem value="in_progress">{t('goals.inProgress')}</SelectItem>
+            <SelectItem value="delayed">{t('goals.delayed')}</SelectItem>
+            <SelectItem value="completed">{t('goals.completed')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -236,7 +232,7 @@ export default function Goals() {
           {filtered.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-8 text-center">
               <Target className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-muted-foreground text-sm">Nenhuma meta encontrada. Crie sua primeira meta!</p>
+              <p className="text-muted-foreground text-sm">{t('goals.empty')}</p>
             </motion.div>
           )}
           {filtered.map((goal, i) => {
@@ -289,7 +285,7 @@ export default function Goals() {
                           className="text-[10px] px-1.5 py-0"
                           style={goal.status === 'completed' ? { borderColor: 'hsl(var(--success))', color: 'hsl(var(--success))' } : goal.status === 'delayed' ? { borderColor: 'hsl(var(--warning))', color: 'hsl(var(--warning))' } : {}}
                         >
-                          {STATUS_LABELS[goal.status] || goal.status}
+                          {goal.status === 'completed' ? t('goals.completed') : goal.status === 'delayed' ? t('goals.delayed') : t('goals.inProgress')}
                         </Badge>
                         {goal.end_date && (
                           <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
@@ -410,7 +406,7 @@ function ScenarioSimulator({ goals }: { goals: Goal[] }) {
         return {
           ...goal,
           daysLeft,
-          projectedDate: projDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+          projectedDate: projDate.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }),
           onTrack: goal.end_date ? projDate <= new Date(goal.end_date) : true,
         };
       });
@@ -510,3 +506,4 @@ function ScenarioSimulator({ goals }: { goals: Goal[] }) {
     </motion.div>
   );
 }
+

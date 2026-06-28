@@ -10,11 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { localDateString } from '@/lib/dates';
+import { useI18n } from '@/lib/i18n';
 
 export default function Habits() {
   const { habits, completions, addHabit, deleteHabit, toggleCompletion, getStreak } = useHabits();
   const { toast } = useToast();
   const { features } = useSubscription();
+  const { t } = useI18n();
   const [newHabit, setNewHabit] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
   const today = localDateString();
@@ -23,19 +25,18 @@ export default function Habits() {
     if (!newHabit.trim()) return;
     if (habits.length >= features.maxHabits) {
       setShowUpgrade(true);
-      toast({ title: 'Limite atingido', description: 'Você atingiu o limite do plano gratuito.', variant: 'destructive' });
+      toast({ title: t('habits.limitTitle'), description: t('habits.limitText'), variant: 'destructive' });
       return;
     }
     try {
       await addHabit.mutateAsync(newHabit.trim());
       setNewHabit('');
     } catch (e: any) {
-      console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
+      console.error(e);
+      toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
-  // Monthly consistency
-  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
   const daysPassed = new Date().getDate();
 
   const getConsistency = (habitId: string) => {
@@ -48,7 +49,6 @@ export default function Habits() {
     return daysPassed > 0 ? Math.round((count / daysPassed) * 100) : 0;
   };
 
-  // Heatmap last 30 days
   const last30 = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
@@ -58,13 +58,13 @@ export default function Habits() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-3xl font-bold font-display text-gradient-silver">Hábitos Diários</h1>
-        <p className="text-muted-foreground text-sm">Construa consistência todos os dias</p>
+        <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('habits.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('habits.subtitle')}</p>
       </motion.div>
 
       <div className="flex gap-2">
         <Input
-          placeholder="Novo hábito..."
+          placeholder={t('habits.new')}
           value={newHabit}
           onChange={e => setNewHabit(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
@@ -107,14 +107,13 @@ export default function Habits() {
                       <span>{streak}</span>
                     </div>
                   )}
-                  <span className="text-xs text-muted-foreground">{consistency}% este mês</span>
-                  <button onClick={() => deleteHabit.mutateAsync(habit.id)} aria-label={`Excluir hábito ${habit.name}`} className="text-muted-foreground hover:text-destructive">
+                  <span className="text-xs text-muted-foreground">{consistency}% {t('common.thisMonth')}</span>
+                  <button onClick={() => deleteHabit.mutateAsync(habit.id)} aria-label={`Delete habit ${habit.name}`} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Mini heatmap */}
               <div className="flex gap-1">
                 {last30.map(date => {
                   const done = completions.some(c => c.habit_id === habit.id && c.completed_date === date);
@@ -132,18 +131,18 @@ export default function Habits() {
         })}
         {habits.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            Adicione seu primeiro hábito acima
+            {t('habits.empty')}
           </div>
         )}
       </div>
 
       {!features.unlimitedHabits && habits.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          {habits.length}/{features.maxHabits} hábitos • Upgrade para ilimitados
+          {t('habits.upgrade', { current: habits.length, max: features.maxHabits })}
         </p>
       )}
 
-      <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} featureLabel="Hábitos ilimitados" />
+      <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} featureLabel={t('habits.unlimited')} />
     </div>
   );
 }
