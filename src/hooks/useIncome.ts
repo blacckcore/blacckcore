@@ -2,19 +2,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 
-export function useIncome() {
+export function useIncome(month?: number, year?: number) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
 
   const query = useQuery({
-    queryKey: ['income', user?.id],
+    queryKey: ['income', user?.id, m, y],
     enabled: !!user,
     refetchInterval: 3000,
     refetchIntervalInBackground: true,
     queryFn: async () => {
+      const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+      const endDate = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
       const { data, error } = await supabase
         .from('income')
         .select('*')
+        .gte('expected_date', startDate)
+        .lt('expected_date', endDate)
         .order('expected_date', { ascending: false });
       if (error) throw error;
       return data;

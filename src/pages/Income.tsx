@@ -12,18 +12,23 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { localDateString } from '@/lib/dates';
 import { useI18n } from '@/lib/i18n';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const ICON_COMPONENTS: Record<string, any> = { DollarSign, Briefcase, Laptop, TrendingUp, Coins, CreditCard, Banknote, Gem };
+const tooltipStyle = { backgroundColor: 'hsl(0,0%,8%)', border: '1px solid hsl(0,0%,16%)', borderRadius: '8px', color: 'hsl(0,0%,90%)' };
 
 export default function Income() {
   const { t, money, locale } = useI18n();
-  const { income, totalPending, totalReceived, addIncome, updateIncome, deleteIncome } = useIncome();
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year] = useState(new Date().getFullYear());
+  const { income, totalPending, totalReceived, addIncome, updateIncome, deleteIncome } = useIncome(month, year);
   const { incomeTypes, seedDefaults, addType, deleteType, loading: typesLoading } = useIncomeTypes();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [form, setForm] = useState({ source: '', amount: '', expected_date: localDateString(), status: 'pending', income_type_id: '' });
   const [newType, setNewType] = useState({ name: '', color: INCOME_COLORS[0], icon: 'DollarSign' });
 
@@ -64,7 +69,13 @@ export default function Income() {
     setTypeOpen(false);
   };
 
-  const filteredIncome = filterType === 'all' ? income : income.filter(i => (i as any).income_type_id === filterType);
+  const filteredIncome = income
+    .filter(i => filterType === 'all' || (i as any).income_type_id === filterType)
+    .filter(i => filterStatus === 'all' || i.status === filterStatus);
+
+  const months = Array.from({ length: 12 }, (_, index) =>
+    new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, index, 1))
+  );
 
   // Analytics by source
   const byType = incomeTypes.map(t => {
@@ -74,6 +85,11 @@ export default function Income() {
   }).filter(t => t.count > 0);
 
   const getTypeForItem = (item: any) => incomeTypes.find(t => t.id === item.income_type_id);
+  const statusTotal = totalPending + totalReceived;
+  const byStatus = [
+    { key: 'pending', name: t('common.pending'), total: totalPending, color: '#f59e0b' },
+    { key: 'received', name: t('income.received'), total: totalReceived, color: '#22c55e' },
+  ].filter(item => item.total > 0);
 
   return (
     <div className="space-y-6">
@@ -81,7 +97,18 @@ export default function Income() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h1 className="text-3xl font-bold font-display text-gradient-silver">{t('income.title')}</h1>
         </motion.div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+            <SelectTrigger className="w-28 bg-secondary border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((m, i) => (
+                <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Dialog open={typeOpen} onOpenChange={setTypeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="border-border">
@@ -168,6 +195,48 @@ export default function Income() {
         <StatCard title={t('income.received')} value={money(totalReceived)} icon={DollarSign} delay={0.1} />
       </div>
 
+      {byStatus.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-4">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t('income.receivedVsPending')}</h2>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+              {byStatus.map(item => {
+                const isActive = filterStatus === item.key;
+                const percent = statusTotal > 0 ? Math.round((item.total / statusTotal) * 100) : 0;
+                return (
+                  <motion.button
+                    key={item.key}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setFilterStatus(isActive ? 'all' : item.key)}
+                    className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all ${isActive ? 'bg-accent border-foreground/20' : 'bg-secondary/50 border-border/50'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{percent}%</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">{money(item.total)}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+            <div className="w-32 h-32 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={byStatus} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={50} innerRadius={25} paddingAngle={2}>
+                    {byStatus.map((item) => <Cell key={item.key} fill={item.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => money(Number(v))} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Analytics by type */}
       {byType.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-4">
@@ -196,6 +265,14 @@ export default function Income() {
           <SelectContent>
             <SelectItem value="all">{t('common.all')}</SelectItem>
             {incomeTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-36 bg-secondary border-border h-8 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
+            <SelectItem value="pending">{t('common.pending')}</SelectItem>
+            <SelectItem value="received">{t('income.received')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
