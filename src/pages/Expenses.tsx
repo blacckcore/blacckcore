@@ -99,6 +99,10 @@ export default function Expenses() {
   }).filter(t => t.count > 0);
 
   const totalPending = total - totalPaid;
+  const byStatus = [
+    { key: 'paid', name: t('common.paid'), total: totalPaid, color: '#22c55e' },
+    { key: 'pending', name: t('common.pending'), total: totalPending, color: '#f59e0b' },
+  ].filter(item => item.total > 0);
 
   return (
     <div className="space-y-6">
@@ -235,6 +239,48 @@ export default function Expenses() {
                 <PieChart>
                   <Pie data={byType} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={50} innerRadius={25} paddingAngle={2}>
                     {byType.map((t, i) => <Cell key={i} fill={t.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => money(Number(v))} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {byStatus.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-4">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t('expenses.paidVsPending')}</h2>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+              {byStatus.map(item => {
+                const isActive = filterStatus === item.key;
+                const percent = total > 0 ? Math.round((item.total / total) * 100) : 0;
+                return (
+                  <motion.button
+                    key={item.key}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setFilterStatus(isActive ? 'all' : item.key)}
+                    className={`flex items-center justify-between gap-3 px-3 py-3 rounded-lg border transition-all ${isActive ? 'bg-accent border-foreground/20' : 'bg-secondary/50 border-border/50'}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-xs font-medium">{item.name}</span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block text-sm font-semibold">{money(item.total)}</span>
+                      <span className="block text-[10px] text-muted-foreground">{percent}%</span>
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+            <div className="w-32 h-32 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={byStatus} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={50} innerRadius={25} paddingAngle={2}>
+                    {byStatus.map((item, i) => <Cell key={i} fill={item.color} />)}
                   </Pie>
                   <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => money(Number(v))} />
                 </PieChart>
