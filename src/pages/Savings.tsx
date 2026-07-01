@@ -1,12 +1,13 @@
 import { getFriendlyErrorMessage } from '@/lib/errors';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PiggyBank, Edit2, Plus, Trash2, TrendingDown, Lightbulb, Shield, Sparkles } from 'lucide-react';
+import { PiggyBank, Edit2, Plus, Trash2, TrendingDown, Lightbulb, Shield, Sparkles, Wallet, Landmark, CreditCard, Banknote, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProgressBar } from '@/components/ProgressBar';
 import { useSavings } from '@/hooks/useSavings';
+import { SavingsAccount, SavingsAccountType, useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useDebts } from '@/hooks/useDebts';
 import { useIncome } from '@/hooks/useIncome';
 import { useExpenses } from '@/hooks/useExpenses';
@@ -52,6 +53,7 @@ function ConfettiOverlay({ show }: { show: boolean }) {
 export default function Savings() {
   const { t, money, locale } = useI18n();
   const { savings, upsertSavings } = useSavings();
+  const { accounts, totals, addAccount, updateAccount, deleteAccount, seedDefaultAccounts } = useSavingsAccounts();
   const { debts, totalDebt, addDebt, deleteDebt } = useDebts();
   const { income } = useIncome();
   const { total: totalExpenses } = useExpenses();
@@ -60,18 +62,52 @@ export default function Savings() {
   const [editing, setEditing] = useState(false);
   const [debtOpen, setDebtOpen] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<SavingsAccount | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [form, setForm] = useState({ total_saved: '', goal_amount: '', goal_date: '' });
+  const [accountForm, setAccountForm] = useState({ name: '', type: 'account' as SavingsAccountType, amount: '' });
   const [debtForm, setDebtForm] = useState({ name: '', total_amount: '', remaining_amount: '', interest_rate: '', minimum_payment: '', due_date: '' });
   const [reserveForm, setReserveForm] = useState({ months: '6', type: 'auto' as 'auto' | 'manual', manual_goal: '' });
+  const seededDefaults = useRef(false);
 
   const monthlyIncome = income.filter(i => i.status === 'received').reduce((s, i) => s + Number(i.amount), 0);
   const avgExpenses = totalExpenses; // current month expenses as proxy
   const monthlySavingsRate = Math.max(0, monthlyIncome - totalExpenses);
 
-  const saved = Number(savings?.total_saved ?? 0);
+  const savedFromRow = Number(savings?.total_saved ?? 0);
+  const saved = accounts.length > 0 ? totals.liquid : savedFromRow;
+  const availableLimits = totals.limits;
+  const investments = totals.investments;
   const goal = Number(savings?.goal_amount ?? 0);
   const savingsPercent = goal > 0 ? Math.min((saved / goal) * 100, 100) : 0;
+
+  const accountTypes = useMemo(() => ({
+    account: { label: t('savings.accountType.account'), color: '#22c55e', Icon: Wallet },
+    investment: { label: t('savings.accountType.investment'), color: '#3b82f6', Icon: LineChart },
+    card_limit: { label: t('savings.accountType.cardLimit'), color: '#a855f7', Icon: CreditCard },
+    overdraft: { label: t('savings.accountType.overdraft'), color: '#f59e0b', Icon: Landmark },
+    cash: { label: t('savings.accountType.cash'), color: '#14b8a6', Icon: Banknote },
+    other: { label: t('savings.accountType.other'), color: '#94a3b8', Icon: PiggyBank },
+  }), [t]);
+
+  useEffect(() => {
+    if (seededDefaults.current || accounts.length > 0 || savedFromRow <= 0) return;
+    seededDefaults.current = true;
+    seedDefaultAccounts.mutateAsync(savedFromRow).catch((e: any) => {
+      console.error(e);
+      seededDefaults.current = false;
+    });
+  }, [accounts.length, savedFromRow, seedDefaultAccounts]);
+
+  useEffect(() => {
+    if (accounts.length === 0 || !savings || Math.abs(Number(savings.total_saved ?? 0) - saved) < 0.01) return;
+    upsertSavings.mutate({
+      total_saved: saved,
+      goal_amount: Number(savings.goal_amount ?? 0),
+      goal_date: savings.goal_date || undefined,
+    });
+  }, [accounts.length, saved, savings, upsertSavings]);
 
   // Confetti on 100%
   useEffect(() => {
@@ -138,6 +174,42 @@ export default function Savings() {
     }
   };
 
+  const openAccountDialog = (account?: SavingsAccount) => {
+    setEditingAccount(account ?? null);
+    setAccountForm({
+      name: account?.name ?? '',
+      type: account?.type ?? 'account',
+      amount: String(account?.amount ?? ''),
+    });
+    setAccountOpen(true);
+  };
+
+  const handleSaveAccount = async () => {
+    if (!accountForm.name.trim()) return;
+    const meta = accountTypes[accountForm.type];
+    const payload = {
+      name: accountForm.name.trim(),
+      type: accountForm.type,
+      amount: Number(accountForm.amount || 0),
+      color: meta.color,
+    };
+
+    try {
+      if (editingAccount) {
+        await updateAccount.mutateAsync({ id: editingAccount.id, ...payload });
+      } else {
+        await addAccount.mutateAsync(payload);
+      }
+      setAccountOpen(false);
+      setEditingAccount(null);
+      setAccountForm({ name: '', type: 'account', amount: '' });
+      toast({ title: t('common.saved'), description: t('savings.accountSaved') });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
+    }
+  };
+
   const handleAddDebt = async () => {
     if (!debtForm.name || !debtForm.total_amount) return;
     try {
@@ -164,6 +236,7 @@ export default function Savings() {
     return Math.ceil(totalDebt / payment);
   };
   const monthsToFree = estimateMonths(suggestedPayment);
+  const canPaySmallestDebt = sortedDebts[0] && saved >= Number(sortedDebts[0].remaining_amount);
 
   return (
     <div className="space-y-6">
@@ -233,6 +306,99 @@ export default function Savings() {
           </motion.div>
         </div>
       )}
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="glass-card p-6 space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-bold font-display text-foreground">{t('savings.moneyMap')}</h2>
+            <p className="text-sm text-muted-foreground">{t('savings.moneyMapText')}</p>
+          </div>
+          <Button onClick={() => openAccountDialog()} size="sm" className="gradient-silver text-primary-foreground">
+            <Plus className="h-4 w-4 mr-1" /> {t('savings.addMoneyType')}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{t('savings.realMoney')}</p>
+            <p className="text-2xl font-bold text-foreground mt-2">{money(saved)}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{t('savings.investments')}</p>
+            <p className="text-2xl font-bold text-foreground mt-2">{money(investments)}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{t('savings.limitsCredit')}</p>
+            <p className="text-2xl font-bold text-foreground mt-2">{money(availableLimits)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('savings.limitsHint')}</p>
+          </div>
+        </div>
+
+        {accounts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {accounts.map(account => {
+              const meta = accountTypes[account.type] ?? accountTypes.other;
+              const Icon = meta.Icon;
+              return (
+                <div key={account.id} className="flex items-center justify-between gap-3 rounded-xl bg-secondary/40 border border-border/50 p-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${account.color}22`, color: account.color }}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">{account.name}</p>
+                      <p className="text-xs text-muted-foreground">{meta.label}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="font-semibold text-foreground whitespace-nowrap">{money(account.amount)}</p>
+                    <button onClick={() => openAccountDialog(account)} aria-label={t('common.edit')} className="text-muted-foreground hover:text-foreground">
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => deleteAccount.mutateAsync(account.id)} aria-label="Excluir" className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-secondary/30 border border-border/50 p-4 text-sm text-muted-foreground">
+            {t('savings.noMoneyTypes')}
+          </div>
+        )}
+
+        <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display">{editingAccount ? t('savings.editMoneyType') : t('savings.addMoneyType')}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">{t('savings.moneyTypeName')}</label>
+                <Input value={accountForm.name} onChange={e => setAccountForm({ ...accountForm, name: e.target.value })} className="bg-secondary border-border" placeholder="Ex: Nubank, Investimentos, Limite especial" />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">{t('savings.moneyType')}</label>
+                <Select value={accountForm.type} onValueChange={(value: SavingsAccountType) => setAccountForm({ ...accountForm, type: value })}>
+                  <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(accountTypes) as SavingsAccountType[]).map(type => (
+                      <SelectItem key={type} value={type}>{accountTypes[type].label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">{t('savings.moneyTypeAmount')}</label>
+                <Input type="number" value={accountForm.amount} onChange={e => setAccountForm({ ...accountForm, amount: e.target.value })} className="bg-secondary border-border" placeholder="0,00" />
+              </div>
+              <Button onClick={handleSaveAccount} className="w-full gradient-silver text-primary-foreground">{t('common.save')}</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
 
       {/* Emergency Reserve Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
@@ -424,6 +590,61 @@ export default function Savings() {
 
         {/* Smart Payoff Plan */}
         {debts.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 space-y-4 mt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-accent">
+                <Lightbulb className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">{t('savings.smartPlanTitle')}</h2>
+                <p className="text-xs text-muted-foreground">{t('savings.smartPlanSubtitle')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg bg-secondary/50 border border-border/50">
+                <p className="text-xs text-muted-foreground">{t('savings.realMoney')}</p>
+                <p className="font-semibold text-foreground">{money(saved)}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/50 border border-border/50">
+                <p className="text-xs text-muted-foreground">{t('savings.limitsCredit')}</p>
+                <p className="font-semibold text-foreground">{money(availableLimits)}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/50 border border-border/50">
+                <p className="text-xs text-muted-foreground">{t('savings.monthlySuggestion')}</p>
+                <p className="font-semibold text-foreground">{money(suggestedPayment)}</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-accent/50 border border-border/50">
+              {canPaySmallestDebt ? (
+                <p className="text-sm text-foreground">{t('savings.canPaySmallest', { debt: sortedDebts[0].name })}</p>
+              ) : suggestedPayment > 0 && monthsToFree > 0 ? (
+                <p className="text-sm text-foreground">{t('savings.freeInMonths', { value: money(suggestedPayment), months: monthsToFree })}</p>
+              ) : (
+                <p className="text-sm text-foreground">{t('savings.noPayoffMargin')}</p>
+              )}
+            </div>
+
+            {sortedDebts.length > 1 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">{t('savings.payoffOrder')}</p>
+                <div className="space-y-1">
+                  {sortedDebts.map((d, i) => (
+                    <div key={d.id} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 h-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground">{i + 1}</span>
+                      <span className="text-foreground">{d.name}</span>
+                      <span className="text-muted-foreground">- {money(Number(d.remaining_amount))}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Legacy payoff plan kept disabled after the smarter money-map plan above. */}
+        {false && debts.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 space-y-4 mt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-accent">
