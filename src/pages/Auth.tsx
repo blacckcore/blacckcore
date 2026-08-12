@@ -26,7 +26,7 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
@@ -34,8 +34,11 @@ export default function Auth() {
         if (error) throw error;
         toast({
           title: 'Conta criada!',
-          description: 'Verifique seu email para confirmar o cadastro.',
+          description: data.session
+            ? 'Bem-vindo ao BlacckCore.'
+            : 'Verifique seu email para confirmar o cadastro.',
         });
+
       }
     } catch (error: any) {
       console.error('Auth error:', error);
