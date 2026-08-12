@@ -10,9 +10,10 @@ export function getFriendlyErrorMessage(err: unknown, fallback = 'Algo deu errad
   if (msg.includes('user already registered') || msg.includes('already registered')) {
     return 'Este email já está cadastrado.';
   }
-  if (msg.includes('password should be') || msg.includes('weak password') || msg.includes('pwned')) {
-    return 'Senha muito fraca ou já vazada. Escolha outra mais forte.';
+  if (msg.includes('password should be') || msg.includes('weak') || msg.includes('pwned')) {
+    return 'Senha muito fraca. Use ao menos 8 caracteres com letras e números.';
   }
+
   if (msg.includes('rate limit') || msg.includes('too many')) {
     return 'Muitas tentativas. Aguarde um momento e tente novamente.';
   }

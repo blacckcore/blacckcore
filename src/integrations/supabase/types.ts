@@ -521,86 +521,6 @@ export type Database = {
         }
         Relationships: []
       }
-      whatsapp_connections: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          id: string
-          is_active: boolean
-          phone_e164: string
-          phone_number_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          id?: string
-          is_active?: boolean
-          phone_e164: string
-          phone_number_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          display_name?: string | null
-          id?: string
-          is_active?: boolean
-          phone_e164?: string
-          phone_number_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      whatsapp_messages: {
-        Row: {
-          body: string | null
-          connection_id: string | null
-          created_at: string
-          direction: string
-          id: string
-          parsed_action: Json | null
-          provider_message_id: string | null
-          raw_payload: Json | null
-          status: string
-          user_id: string | null
-        }
-        Insert: {
-          body?: string | null
-          connection_id?: string | null
-          created_at?: string
-          direction: string
-          id?: string
-          parsed_action?: Json | null
-          provider_message_id?: string | null
-          raw_payload?: Json | null
-          status?: string
-          user_id?: string | null
-        }
-        Update: {
-          body?: string | null
-          connection_id?: string | null
-          created_at?: string
-          direction?: string
-          id?: string
-          parsed_action?: Json | null
-          provider_message_id?: string | null
-          raw_payload?: Json | null
-          status?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_messages_connection_id_fkey"
-            columns: ["connection_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_connections"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_preferences: {
         Row: {
           alert_style: string | null
@@ -662,6 +582,36 @@ export type Database = {
           id?: string
           started_at?: string
           tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_connections: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_active: boolean
+          phone_e164: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone_e164: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone_e164?: string
           updated_at?: string
           user_id?: string
         }
