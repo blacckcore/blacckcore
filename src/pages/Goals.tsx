@@ -406,7 +406,7 @@ function ScenarioSimulator({ goals }: { goals: Goal[] }) {
         return {
           ...goal,
           daysLeft,
-          projectedDate: projDate.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }),
+          projectedDate: projDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
           onTrack: goal.end_date ? projDate <= new Date(goal.end_date) : true,
         };
       });
