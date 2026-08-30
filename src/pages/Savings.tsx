@@ -54,7 +54,7 @@ export default function Savings() {
   const { t, money, locale } = useI18n();
   const { savings, upsertSavings } = useSavings();
   const { accounts, totals, addAccount, updateAccount, deleteAccount, seedDefaultAccounts } = useSavingsAccounts();
-  const { debts, totalDebt, addDebt, deleteDebt } = useDebts();
+  const { debts, totalDebt, addDebt, updateDebt, deleteDebt } = useDebts();
   const { income } = useIncome();
   const { total: totalExpenses } = useExpenses();
   const { isPremium } = useSubscription();
