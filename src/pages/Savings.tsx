@@ -69,6 +69,9 @@ export default function Savings() {
   const [accountForm, setAccountForm] = useState({ name: '', type: 'account' as SavingsAccountType, amount: '' });
   const [debtForm, setDebtForm] = useState({ name: '', total_amount: '', remaining_amount: '', interest_rate: '', minimum_payment: '', due_date: '' });
   const [reserveForm, setReserveForm] = useState({ months: '6', type: 'auto' as 'auto' | 'manual', manual_goal: '' });
+  const [payDebtId, setPayDebtId] = useState<string | null>(null);
+  const [payMode, setPayMode] = useState<'partial' | 'deal' | 'settled'>('partial');
+  const [payValue, setPayValue] = useState('');
   const seededDefaults = useRef(false);
 
   const monthlyIncome = income.filter(i => i.status === 'received').reduce((s, i) => s + Number(i.amount), 0);
