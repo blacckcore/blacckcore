@@ -662,6 +662,84 @@ export default function Savings() {
           )}
         </div>
 
+        {/* Registrar pagamento / acordo / quitação */}
+        <Dialog open={!!payDebtId} onOpenChange={(o) => { if (!o) { setPayDebtId(null); setPayValue(''); } }}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display">
+                {payMode === 'partial' && 'Registrar pagamento parcial'}
+                {payMode === 'deal' && 'Registrar acordo'}
+                {payMode === 'settled' && 'Confirmar quitação'}
+              </DialogTitle>
+            </DialogHeader>
+            {payingDebt && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {payingDebt.name} · restante atual: {money(Number(payingDebt.remaining_amount))}
+                </p>
+
+                <div className="flex gap-2">
+                  {([
+                    { id: 'partial', label: 'Pagamento parcial' },
+                    { id: 'deal', label: 'Acordo' },
+                    { id: 'settled', label: 'Quitada' },
+                  ] as const).map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { setPayMode(opt.id); setPayValue(''); }}
+                      className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                        payMode === opt.id
+                          ? 'border-brand bg-brand/10 text-foreground'
+                          : 'border-border bg-secondary/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {payMode !== 'settled' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground uppercase tracking-wider">
+                      {payMode === 'partial' ? 'Valor pago agora' : 'Novo valor negociado'}
+                    </label>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      value={payValue}
+                      onChange={e => setPayValue(e.target.value)}
+                      className="bg-secondary border-border"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {payMode === 'partial'
+                        ? 'Esse valor será descontado do saldo restante da dívida.'
+                        : 'O saldo restante passa a ser o valor do acordo.'}
+                    </p>
+                  </div>
+                )}
+
+                {payMode === 'settled' && (
+                  <p className="text-sm text-foreground">
+                    A dívida será marcada como 100% quitada e o saldo restante ficará zerado.
+                  </p>
+                )}
+
+                <Button
+                  onClick={handleRegisterPayment}
+                  disabled={payMode !== 'settled' && Number(payValue.replace(',', '.') || 0) <= 0}
+                  className="w-full font-semibold"
+                  style={{ background: 'hsl(var(--brand))', color: 'hsl(var(--brand-foreground))' }}
+                >
+                  Confirmar
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+
+
         {/* Smart Payoff Plan */}
         {debts.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 space-y-4 mt-4">
