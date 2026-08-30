@@ -102,7 +102,7 @@ export default function Auth() {
               boxShadow: '0 0 32px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-xl font-bold text-black font-display">B</span>
+            <span className="text-xl font-bold text-brand-foreground font-display">B</span>
           </div>
           <div>
             <h1 className="text-3xl font-bold font-display text-foreground mb-3 tracking-tight">
@@ -143,7 +143,7 @@ export default function Auth() {
                 boxShadow: '0 0 20px hsl(var(--brand-glow))',
               }}
             >
-              <span className="text-base font-bold text-black font-display">B</span>
+              <span className="text-base font-bold text-brand-foreground font-display">B</span>
             </div>
             <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">
               BlacckCore

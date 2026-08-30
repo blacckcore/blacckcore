@@ -82,7 +82,7 @@ export default function Landing() {
               boxShadow: '0 0 24px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-sm font-bold text-black font-display">B</span>
+            <span className="text-sm font-bold text-brand-foreground font-display">B</span>
           </div>
           <span className="font-display font-bold text-lg tracking-tight">
             BlacckCore
