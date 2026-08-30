@@ -78,7 +78,7 @@ export default function Landing() {
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
               background:
-                'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+                'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
               boxShadow: '0 0 24px hsl(var(--brand-glow))',
             }}
           >

@@ -57,9 +57,9 @@
     --warning-foreground: 0 0% 5%;
 
     /* BlacckCore brand accent — neon green */
-    --brand: 145 100% 45%;
+    --brand: 212 100% 52%;
     --brand-foreground: 0 0% 4%;
-    --brand-glow: 145 100% 45% / 0.35;
+    --brand-glow: 212 100% 52% / 0.35;
 
     --glow-silver: 0 0% 78% / 0.12;
     --glow-silver-strong: 0 0% 78% / 0.22;
@@ -118,9 +118,9 @@
     --warning: 38 90% 42%;
     --warning-foreground: 0 0% 5%;
 
-    --brand: 145 85% 36%;
+    --brand: 218 90% 46%;
     --brand-foreground: 0 0% 100%;
-    --brand-glow: 145 85% 36% / 0.18;
+    --brand-glow: 218 90% 46% / 0.18;
 
     --glow-silver: 0 0% 18% / 0.05;
     --glow-silver-strong: 0 0% 18% / 0.1;
