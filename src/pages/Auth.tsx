@@ -98,11 +98,11 @@ export default function Auth() {
           <div
             className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
               boxShadow: '0 0 32px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-xl font-bold text-black font-display">B</span>
+            <span className="text-xl font-bold text-brand-foreground font-display">B</span>
           </div>
           <div>
             <h1 className="text-3xl font-bold font-display text-foreground mb-3 tracking-tight">
@@ -139,11 +139,11 @@ export default function Auth() {
             <div
               className="w-11 h-11 rounded-xl mx-auto flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+                background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
                 boxShadow: '0 0 20px hsl(var(--brand-glow))',
               }}
             >
-              <span className="text-base font-bold text-black font-display">B</span>
+              <span className="text-base font-bold text-brand-foreground font-display">B</span>
             </div>
             <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">
               BlacckCore
@@ -240,7 +240,7 @@ export default function Auth() {
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   Aguarde...
                 </span>
               ) : (

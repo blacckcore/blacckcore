@@ -55,11 +55,11 @@ export function AppSidebar() {
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(145 100% 35%))',
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
               boxShadow: '0 0 20px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-xs font-bold text-black font-display">B</span>
+            <span className="text-xs font-bold text-brand-foreground font-display">B</span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
