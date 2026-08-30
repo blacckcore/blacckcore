@@ -231,6 +231,55 @@ export default function Savings() {
     }
   };
 
+
+  const payingDebt = debts.find(d => d.id === payDebtId) ?? null;
+
+  const openPayDialog = (id: string, mode: 'partial' | 'deal' | 'settled') => {
+    setPayDebtId(id);
+    setPayMode(mode);
+    setPayValue('');
+  };
+
+  const handleRegisterPayment = async () => {
+    if (!payingDebt) return;
+    const remaining = Number(payingDebt.remaining_amount);
+    const total = Number(payingDebt.total_amount);
+    const value = Number(payValue.replace(',', '.') || 0);
+
+    let updates: { remaining_amount: number; total_amount?: number };
+    let message: string;
+
+    if (payMode === 'settled') {
+      updates = { remaining_amount: 0 };
+      message = `${payingDebt.name} marcada como quitada.`;
+    } else if (payMode === 'deal') {
+      if (value <= 0) return;
+      updates = { remaining_amount: value, total_amount: Math.max(total, value) };
+      message = `Acordo registrado: novo saldo de ${money(value)}.`;
+    } else {
+      if (value <= 0) return;
+      const newRemaining = Math.max(0, remaining - value);
+      updates = { remaining_amount: newRemaining };
+      message = newRemaining === 0
+        ? `Pagamento registrado. ${payingDebt.name} está quitada!`
+        : `Pagamento de ${money(value)} registrado. Restam ${money(newRemaining)}.`;
+    }
+
+    try {
+      await updateDebt.mutateAsync({ id: payingDebt.id, ...updates });
+      if (updates.remaining_amount === 0) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+      toast({ title: 'Dívida atualizada', description: message });
+      setPayDebtId(null);
+      setPayValue('');
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
+    }
+  };
+
   const availableForDebt = Math.max(0, monthlyIncome - totalExpenses);
   const suggestedPayment = Math.round(availableForDebt * 0.3);
   const sortedDebts = [...debts].sort((a, b) => Number(a.remaining_amount) - Number(b.remaining_amount));
