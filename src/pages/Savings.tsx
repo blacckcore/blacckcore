@@ -54,7 +54,7 @@ export default function Savings() {
   const { t, money, locale } = useI18n();
   const { savings, upsertSavings } = useSavings();
   const { accounts, totals, addAccount, updateAccount, deleteAccount, seedDefaultAccounts } = useSavingsAccounts();
-  const { debts, totalDebt, addDebt, deleteDebt } = useDebts();
+  const { debts, totalDebt, addDebt, updateDebt, deleteDebt } = useDebts();
   const { income } = useIncome();
   const { total: totalExpenses } = useExpenses();
   const { isPremium } = useSubscription();
@@ -69,6 +69,9 @@ export default function Savings() {
   const [accountForm, setAccountForm] = useState({ name: '', type: 'account' as SavingsAccountType, amount: '' });
   const [debtForm, setDebtForm] = useState({ name: '', total_amount: '', remaining_amount: '', interest_rate: '', minimum_payment: '', due_date: '' });
   const [reserveForm, setReserveForm] = useState({ months: '6', type: 'auto' as 'auto' | 'manual', manual_goal: '' });
+  const [payDebtId, setPayDebtId] = useState<string | null>(null);
+  const [payMode, setPayMode] = useState<'partial' | 'deal' | 'settled'>('partial');
+  const [payValue, setPayValue] = useState('');
   const seededDefaults = useRef(false);
 
   const monthlyIncome = income.filter(i => i.status === 'received').reduce((s, i) => s + Number(i.amount), 0);
@@ -225,6 +228,55 @@ export default function Savings() {
       setDebtOpen(false);
     } catch (e: any) {
       console.error(e); toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
+    }
+  };
+
+
+  const payingDebt = debts.find(d => d.id === payDebtId) ?? null;
+
+  const openPayDialog = (id: string, mode: 'partial' | 'deal' | 'settled') => {
+    setPayDebtId(id);
+    setPayMode(mode);
+    setPayValue('');
+  };
+
+  const handleRegisterPayment = async () => {
+    if (!payingDebt) return;
+    const remaining = Number(payingDebt.remaining_amount);
+    const total = Number(payingDebt.total_amount);
+    const value = Number(payValue.replace(',', '.') || 0);
+
+    let updates: { remaining_amount: number; total_amount?: number };
+    let message: string;
+
+    if (payMode === 'settled') {
+      updates = { remaining_amount: 0 };
+      message = `${payingDebt.name} marcada como quitada.`;
+    } else if (payMode === 'deal') {
+      if (value <= 0) return;
+      updates = { remaining_amount: value, total_amount: Math.max(total, value) };
+      message = `Acordo registrado: novo saldo de ${money(value)}.`;
+    } else {
+      if (value <= 0) return;
+      const newRemaining = Math.max(0, remaining - value);
+      updates = { remaining_amount: newRemaining };
+      message = newRemaining === 0
+        ? `Pagamento registrado. ${payingDebt.name} está quitada!`
+        : `Pagamento de ${money(value)} registrado. Restam ${money(newRemaining)}.`;
+    }
+
+    try {
+      await updateDebt.mutateAsync({ id: payingDebt.id, ...updates });
+      if (updates.remaining_amount === 0) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+      toast({ title: 'Dívida atualizada', description: message });
+      setPayDebtId(null);
+      setPayValue('');
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Erro', description: getFriendlyErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -556,9 +608,11 @@ export default function Savings() {
           {debts.length > 0 ? (
             <div className="space-y-3">
               {debts.map((debt, i) => {
-                const progress = Number(debt.total_amount) > 0
+                const rawProgress = Number(debt.total_amount) > 0
                   ? ((Number(debt.total_amount) - Number(debt.remaining_amount)) / Number(debt.total_amount)) * 100
                   : 0;
+                const progress = Math.min(100, Math.max(0, rawProgress));
+                const isSettled = Number(debt.remaining_amount) <= 0;
                 return (
                   <motion.div
                     key={debt.id}
@@ -568,7 +622,14 @@ export default function Savings() {
                     className="p-4 rounded-xl bg-secondary/50 border border-border/50 space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">{debt.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{debt.name}</span>
+                        {isSettled && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-success/15 text-success">
+                            Quitada
+                          </span>
+                        )}
+                      </div>
                       <button onClick={() => deleteDebt.mutateAsync(debt.id)} aria-label={`Excluir dívida ${debt.name}`} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -579,6 +640,19 @@ export default function Savings() {
                       {debt.due_date && <span>{t('savings.due')}: {new Date(debt.due_date + 'T00:00:00').toLocaleDateString(locale)}</span>}
                     </div>
                     <ProgressBar value={progress} max={100} label={`${Math.round(progress)}% quitado`} />
+                    {!isSettled && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs" onClick={() => openPayDialog(debt.id, 'partial')}>
+                          <Banknote className="h-3.5 w-3.5 mr-1" /> Paguei parcial
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs" onClick={() => openPayDialog(debt.id, 'deal')}>
+                          <Sparkles className="h-3.5 w-3.5 mr-1" /> Fiz acordo
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs text-success hover:text-success" onClick={() => openPayDialog(debt.id, 'settled')}>
+                          <Shield className="h-3.5 w-3.5 mr-1" /> Quitei
+                        </Button>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -587,6 +661,84 @@ export default function Savings() {
             <p className="text-sm text-muted-foreground text-center py-4">{t('savings.noDebts')}</p>
           )}
         </div>
+
+        {/* Registrar pagamento / acordo / quitação */}
+        <Dialog open={!!payDebtId} onOpenChange={(o) => { if (!o) { setPayDebtId(null); setPayValue(''); } }}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display">
+                {payMode === 'partial' && 'Registrar pagamento parcial'}
+                {payMode === 'deal' && 'Registrar acordo'}
+                {payMode === 'settled' && 'Confirmar quitação'}
+              </DialogTitle>
+            </DialogHeader>
+            {payingDebt && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {payingDebt.name} · restante atual: {money(Number(payingDebt.remaining_amount))}
+                </p>
+
+                <div className="flex gap-2">
+                  {([
+                    { id: 'partial', label: 'Pagamento parcial' },
+                    { id: 'deal', label: 'Acordo' },
+                    { id: 'settled', label: 'Quitada' },
+                  ] as const).map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { setPayMode(opt.id); setPayValue(''); }}
+                      className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                        payMode === opt.id
+                          ? 'border-brand bg-brand/10 text-foreground'
+                          : 'border-border bg-secondary/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {payMode !== 'settled' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground uppercase tracking-wider">
+                      {payMode === 'partial' ? 'Valor pago agora' : 'Novo valor negociado'}
+                    </label>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      value={payValue}
+                      onChange={e => setPayValue(e.target.value)}
+                      className="bg-secondary border-border"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {payMode === 'partial'
+                        ? 'Esse valor será descontado do saldo restante da dívida.'
+                        : 'O saldo restante passa a ser o valor do acordo.'}
+                    </p>
+                  </div>
+                )}
+
+                {payMode === 'settled' && (
+                  <p className="text-sm text-foreground">
+                    A dívida será marcada como 100% quitada e o saldo restante ficará zerado.
+                  </p>
+                )}
+
+                <Button
+                  onClick={handleRegisterPayment}
+                  disabled={payMode !== 'settled' && Number(payValue.replace(',', '.') || 0) <= 0}
+                  className="w-full font-semibold"
+                  style={{ background: 'hsl(var(--brand))', color: 'hsl(var(--brand-foreground))' }}
+                >
+                  Confirmar
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+
 
         {/* Smart Payoff Plan */}
         {debts.length > 0 && (
