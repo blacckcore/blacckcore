@@ -608,9 +608,11 @@ export default function Savings() {
           {debts.length > 0 ? (
             <div className="space-y-3">
               {debts.map((debt, i) => {
-                const progress = Number(debt.total_amount) > 0
+                const rawProgress = Number(debt.total_amount) > 0
                   ? ((Number(debt.total_amount) - Number(debt.remaining_amount)) / Number(debt.total_amount)) * 100
                   : 0;
+                const progress = Math.min(100, Math.max(0, rawProgress));
+                const isSettled = Number(debt.remaining_amount) <= 0;
                 return (
                   <motion.div
                     key={debt.id}
@@ -620,7 +622,14 @@ export default function Savings() {
                     className="p-4 rounded-xl bg-secondary/50 border border-border/50 space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">{debt.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{debt.name}</span>
+                        {isSettled && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-success/15 text-success">
+                            Quitada
+                          </span>
+                        )}
+                      </div>
                       <button onClick={() => deleteDebt.mutateAsync(debt.id)} aria-label={`Excluir dívida ${debt.name}`} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -631,6 +640,19 @@ export default function Savings() {
                       {debt.due_date && <span>{t('savings.due')}: {new Date(debt.due_date + 'T00:00:00').toLocaleDateString(locale)}</span>}
                     </div>
                     <ProgressBar value={progress} max={100} label={`${Math.round(progress)}% quitado`} />
+                    {!isSettled && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs" onClick={() => openPayDialog(debt.id, 'partial')}>
+                          <Banknote className="h-3.5 w-3.5 mr-1" /> Paguei parcial
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs" onClick={() => openPayDialog(debt.id, 'deal')}>
+                          <Sparkles className="h-3.5 w-3.5 mr-1" /> Fiz acordo
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border h-8 text-xs text-success hover:text-success" onClick={() => openPayDialog(debt.id, 'settled')}>
+                          <Shield className="h-3.5 w-3.5 mr-1" /> Quitei
+                        </Button>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
