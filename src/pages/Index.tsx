@@ -344,7 +344,7 @@ const Index = () => {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{t('dashboard.copilot')}</p>
-              <h2 className="text-lg font-semibold font-display text-foreground">BlacckCore</h2>
+              <h2 className="text-lg font-semibold font-display text-foreground">MeuBolso</h2>
             </div>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t('dashboard.copilotIntro')}</p>

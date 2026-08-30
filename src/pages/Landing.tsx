@@ -82,10 +82,10 @@ export default function Landing() {
               boxShadow: '0 0 24px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-sm font-bold text-brand-foreground font-display">B</span>
+            <span className="text-sm font-bold text-brand-foreground font-display">M</span>
           </div>
           <span className="font-display font-bold text-lg tracking-tight">
-            BlacckCore
+            MeuBolso
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function Landing() {
           transition={{ duration: 0.7, delay: 0.15 }}
           className="mt-7 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
         >
-          O BlacckCore conecta seu dinheiro, sua rotina e seus objetivos para
+          O MeuBolso conecta seu dinheiro, sua rotina e seus objetivos para
           mostrar onde você está evoluindo, onde está perdendo energia e quais
           decisões tomar agora.
         </motion.p>
@@ -345,7 +345,7 @@ export default function Landing() {
           Pronto para tomar o controle?
         </h2>
         <p className="text-muted-foreground mb-8">
-          Crie sua conta gratuita e configure seu BlacckCore em menos de um minuto.
+          Crie sua conta gratuita e configure sua conta em menos de um minuto.
         </p>
         <Link to="/auth">
           <Button
@@ -364,7 +364,7 @@ export default function Landing() {
       </section>
 
       <footer className="relative z-10 border-t border-white/5 py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} BlacckCore · Seu centro de comando pessoal
+        © {new Date().getFullYear()} MeuBolso · Controle financeiro pessoal
       </footer>
     </div>
   );

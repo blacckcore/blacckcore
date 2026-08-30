@@ -59,12 +59,12 @@ export function AppSidebar() {
               boxShadow: '0 0 20px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-xs font-bold text-brand-foreground font-display">B</span>
+            <span className="text-xs font-bold text-brand-foreground font-display">M</span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold font-display text-foreground truncate tracking-tight">
-                BlacckCore
+                MeuBolso
               </h2>
               <PremiumBadge />
             </div>

@@ -1056,7 +1056,7 @@ Deno.serve(async (req) => {
           });
 
           const responseText =
-            "Esse numero ainda nao esta conectado ao BlacckCore. Cadastre seu WhatsApp nas configuracoes do app.";
+            "Esse numero ainda nao esta conectado ao MeuBolso. Cadastre seu WhatsApp nas configuracoes do app.";
           const replyResult = await reply(
             phoneNumberId,
             fromRaw,

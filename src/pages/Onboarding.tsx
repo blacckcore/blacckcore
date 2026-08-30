@@ -60,7 +60,7 @@ export default function Onboarding() {
     }
     try {
       await save.mutateAsync(answers);
-      toast({ title: 'Tudo pronto!', description: 'Seu BlacckCore foi personalizado.' });
+      toast({ title: 'Tudo pronto!', description: 'Sua conta foi personalizada.' });
       navigate('/', { replace: true });
     } catch (e) {
       toast({
