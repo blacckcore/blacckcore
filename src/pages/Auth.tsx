@@ -35,7 +35,7 @@ export default function Auth() {
         toast({
           title: 'Conta criada!',
           description: data.session
-            ? 'Bem-vindo ao MeuBolso.'
+            ? 'Bem-vindo ao MeuBolso!'
             : 'Verifique seu email para confirmar o cadastro.',
         });
 
@@ -153,7 +153,7 @@ export default function Auth() {
           {/* Form header */}
           <div>
             <h2 className="text-xl font-semibold font-display text-foreground tracking-tight">
-              {isLogin ? 'Entre no seu centro de comando' : 'Crie seu MeuBolso'}
+              {isLogin ? 'Entre no seu centro de comando' : 'Crie sua conta MeuBolso'}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {isLogin

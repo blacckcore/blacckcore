@@ -345,7 +345,7 @@ export default function Landing() {
           Pronto para tomar o controle?
         </h2>
         <p className="text-muted-foreground mb-8">
-          Crie sua conta gratuita e configure seu MeuBolso em menos de um minuto.
+          Crie sua conta gratuita e configure sua conta em menos de um minuto.
         </p>
         <Link to="/auth">
           <Button
@@ -364,7 +364,7 @@ export default function Landing() {
       </section>
 
       <footer className="relative z-10 border-t border-white/5 py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} MeuBolso · Seu centro de comando pessoal
+        © {new Date().getFullYear()} MeuBolso · Controle financeiro pessoal
       </footer>
     </div>
   );
