@@ -35,7 +35,7 @@ export default function Auth() {
         toast({
           title: 'Conta criada!',
           description: data.session
-            ? 'Bem-vindo ao BlacckCore.'
+            ? 'Bem-vindo ao MeuBolso.'
             : 'Verifique seu email para confirmar o cadastro.',
         });
 
@@ -102,11 +102,11 @@ export default function Auth() {
               boxShadow: '0 0 32px hsl(var(--brand-glow))',
             }}
           >
-            <span className="text-xl font-bold text-brand-foreground font-display">B</span>
+            <span className="text-xl font-bold text-brand-foreground font-display">M</span>
           </div>
           <div>
             <h1 className="text-3xl font-bold font-display text-foreground mb-3 tracking-tight">
-              BlacckCore
+              MeuBolso
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Seu centro de comando pessoal. Organize dinheiro, hábitos e metas com inteligência.
@@ -143,17 +143,17 @@ export default function Auth() {
                 boxShadow: '0 0 20px hsl(var(--brand-glow))',
               }}
             >
-              <span className="text-base font-bold text-brand-foreground font-display">B</span>
+              <span className="text-base font-bold text-brand-foreground font-display">M</span>
             </div>
             <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">
-              BlacckCore
+              MeuBolso
             </h1>
           </div>
 
           {/* Form header */}
           <div>
             <h2 className="text-xl font-semibold font-display text-foreground tracking-tight">
-              {isLogin ? 'Entre no seu centro de comando' : 'Crie seu BlacckCore'}
+              {isLogin ? 'Entre no seu centro de comando' : 'Crie seu MeuBolso'}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {isLogin

@@ -66,7 +66,7 @@ export default function SettingsPage() {
       setConnectedWhatsapp(phone);
       toast({
         title: 'WhatsApp conectado',
-        description: 'Agora mensagens desse número podem entrar no BlacckCore.',
+        description: 'Agora mensagens desse número podem entrar no MeuBolso.',
       });
     } catch (e: unknown) {
       console.error(e);
@@ -194,7 +194,7 @@ export default function SettingsPage() {
             </div>
             <p className="text-sm text-muted-foreground">
               {connectedWhatsapp
-                ? 'Mensagens desse numero entram automaticamente no BlacckCore.'
+                ? 'Mensagens desse numero entram automaticamente no MeuBolso.'
                 : 'Conecte seu número para lançar gastos, receitas e hábitos direto pelo WhatsApp.'}
             </p>
           </div>
