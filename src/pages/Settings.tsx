@@ -16,6 +16,7 @@ import { TierBadge } from '@/components/PremiumBadge';
 import { FeatureGate } from '@/components/FeatureGate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
+import { AccentPicker } from '@/components/AccentPicker';
 
 export default function SettingsPage() {
   const { categories, addCategory, deleteCategory } = useCategories();
