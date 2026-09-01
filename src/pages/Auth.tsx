@@ -98,7 +98,7 @@ export default function Auth() {
           <div
             className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-deep)))',
               boxShadow: '0 0 32px hsl(var(--brand-glow))',
             }}
           >
@@ -139,7 +139,7 @@ export default function Auth() {
             <div
               className="w-11 h-11 rounded-xl mx-auto flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
+                background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-deep)))',
                 boxShadow: '0 0 20px hsl(var(--brand-glow))',
               }}
             >

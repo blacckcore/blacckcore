@@ -55,7 +55,7 @@ export function AppSidebar() {
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(212 100% 42%))',
+              background: 'linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-deep)))',
               boxShadow: '0 0 20px hsl(var(--brand-glow))',
             }}
           >
