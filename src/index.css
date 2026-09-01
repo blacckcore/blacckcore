@@ -59,6 +59,7 @@
     /* MeuBolso brand accent — blue */
     --brand: 212 100% 52%;
     --brand-foreground: 0 0% 100%;
+    --brand-deep: 212 100% 42%;
     --brand-glow: 212 100% 52% / 0.35;
 
     --glow-silver: 0 0% 78% / 0.12;
@@ -120,6 +121,7 @@
 
     --brand: 218 90% 46%;
     --brand-foreground: 0 0% 100%;
+    --brand-deep: 218 90% 38%;
     --brand-glow: 218 90% 46% / 0.18;
 
     --glow-silver: 0 0% 18% / 0.05;
