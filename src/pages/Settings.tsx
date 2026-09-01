@@ -175,6 +175,10 @@ export default function SettingsPage() {
         </motion.div>
       )}
 
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="glass-card p-6">
+        <AccentPicker />
+      </motion.div>
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="glass-card p-6 space-y-4">
         <div className="flex items-start gap-3">
           <div
